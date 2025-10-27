@@ -1,0 +1,51 @@
+graph TD
+    A[Client Document Upload] --> B{Document Classification}
+    
+    B --> C1[Legal Documents]
+    B --> C2[Technical Drawings]
+    B --> C3[Safety Documents]
+    B --> C4[Cost Documents]
+    B --> C5[Mixed Documents]
+    
+    C1 --> D1[Legal Compliance AI]
+    C2 --> D2[Design Validation AI]
+    C3 --> D3[H&S Compliance AI]
+    C4 --> D4[Cost Analysis AI]
+    C5 --> D5[Multi-Pipeline Processing]
+    
+    D1 --> E[OCR & Text Extraction]
+    D2 --> E
+    D3 --> E
+    D4 --> E
+    D5 --> E
+    
+    E --> F1[Design Validation Module]
+    E --> F2[Legal Compliance Module]
+    E --> F3[Cost Analysis Module]
+    E --> F4[Performance Optimizer]
+    E --> F5[Risk Assessment Module]
+    
+    F1 --> G[RAG Knowledge Base Integration]
+    F2 --> G
+    F3 --> G
+    F4 --> G
+    F5 --> G
+    
+    G --> H[Cross-Module Validation]
+    H --> I[Chartered Engineer Review]
+    
+    I --> J{Engineer Approval?}
+    J -->|No| K[Revision Required]
+    K --> I
+    J -->|Yes| L[Report Generation]
+    
+    L --> M[Professional Formatting]
+    M --> N[Secure Client Delivery]
+    N --> O[Immediate Data Disposal]
+    
+    style A fill:#e1f5fe
+    style B fill:#fff3e0
+    style G fill:#f3e5f5
+    style I fill:#e8f5e8
+    style N fill:#fff8e1
+    style O fill:#ffebee
