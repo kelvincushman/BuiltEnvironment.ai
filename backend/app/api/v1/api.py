@@ -6,6 +6,8 @@ from fastapi import APIRouter
 from .endpoints.auth import router as auth_router
 from .endpoints.projects import router as projects_router
 from .endpoints.documents import router as documents_router
+from .endpoints.chat import router as chat_router
+from .endpoints.ai import router as ai_router
 
 api_router = APIRouter()
 
@@ -13,8 +15,9 @@ api_router = APIRouter()
 api_router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(projects_router, prefix="/projects", tags=["Projects"])
 api_router.include_router(documents_router, prefix="/documents", tags=["Documents"])
+api_router.include_router(chat_router, prefix="/chat", tags=["Chat"])
+api_router.include_router(ai_router, prefix="/ai", tags=["AI Agents"])
 
-# Add more routers here as we build them:
-# api_router.include_router(ai_router, prefix="/ai", tags=["AI Agents"])
-# api_router.include_router(chat_router, prefix="/chat", tags=["Chat"])
+# Future endpoints:
 # api_router.include_router(compliance_router, prefix="/compliance", tags=["Compliance"])
+# api_router.include_router(reports_router, prefix="/reports", tags=["Reports"])
