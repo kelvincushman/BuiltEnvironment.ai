@@ -1,0 +1,69 @@
+# BuiltEnvironment.ai Python Dependencies
+
+# Core Framework
+fastapi==0.110.0
+uvicorn[standard]==0.27.1
+pydantic==2.6.1
+pydantic-settings==2.1.0
+
+# AI & Language Models
+anthropic==0.18.1
+openai==1.12.0
+langchain==0.1.9
+langchain-community==0.0.24
+langflow==1.0.0
+
+# Vector Database & RAG
+chromadb==0.4.22
+faiss-cpu==1.7.4
+sentence-transformers==2.5.1
+
+# Document Processing
+pypdf==4.0.2
+python-docx==1.1.0
+openpyxl==3.1.2
+python-multipart==0.0.9
+pillow==10.2.0
+
+# OCR
+pytesseract==0.3.10
+pdf2image==1.17.0
+
+# Database
+sqlalchemy==2.0.27
+psycopg2-binary==2.9.9
+alembic==1.13.1
+asyncpg==0.29.0
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.9
+cryptography==42.0.2
+
+# Utilities
+python-dotenv==1.0.1
+pyyaml==6.0.1
+httpx==0.27.0
+aiofiles==23.2.1
+python-dateutil==2.8.2
+
+# Testing
+pytest==8.0.1
+pytest-asyncio==0.23.5
+pytest-cov==4.1.0
+httpx==0.27.0
+
+# Development
+black==24.2.0
+flake8==7.0.0
+mypy==1.8.0
+pre-commit==3.6.2
+
+# Monitoring
+prometheus-client==0.20.0
+python-json-logger==2.0.7
+
+# Task Queue
+celery==5.3.6
+redis==5.0.1

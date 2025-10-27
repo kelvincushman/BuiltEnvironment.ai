@@ -1,0 +1,151 @@
+# BuiltEnvironment.ai Configuration
+
+# Application Settings
+app:
+  name: "BuiltEnvironment.ai"
+  version: "1.0.0"
+  environment: "development"
+  debug: true
+  port: 3000
+
+# AI Services Configuration
+ai:
+  # Claude Configuration
+  claude:
+    model: "claude-sonnet-4"
+    max_tokens: 4096
+    temperature: 0.7
+    api_version: "2024-01"
+
+  # Groq Configuration (for privacy-focused processing)
+  groq:
+    enabled: true
+    model: "llama-3.1-70b"
+    max_tokens: 4096
+
+  # Langflow Configuration
+  langflow:
+    enabled: true
+    api_url: "http://localhost:7860"
+    workflows:
+      - "document_processing"
+      - "compliance_check"
+      - "standards_validation"
+
+# Database Configuration
+database:
+  type: "postgresql"
+  host: "localhost"
+  port: 5432
+  name: "builtenvironment_db"
+  pool_size: 10
+
+  # Vector Database for RAG
+  vector_db:
+    type: "chromadb"
+    collection: "documents"
+    embedding_model: "text-embedding-3-small"
+
+# Document Processing
+documents:
+  upload_path: "./uploads"
+  max_file_size: "50MB"
+  allowed_formats:
+    - "pdf"
+    - "docx"
+    - "xlsx"
+    - "dwg"
+    - "ifc"
+
+  ocr:
+    enabled: true
+    provider: "tesseract"
+    languages: ["eng"]
+
+# Compliance Framework
+compliance:
+  # UK Building Regulations
+  uk_regulations:
+    enabled: true
+    parts: ["A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "P", "Q", "R", "S"]
+
+  # ISO Standards
+  iso_standards:
+    enabled: true
+    standards:
+      - "ISO 9001"
+      - "ISO 14001"
+      - "ISO 19650"
+      - "ISO 45001"
+
+  # Traffic Light System
+  traffic_light:
+    green_threshold: 0.95
+    amber_threshold: 0.75
+
+# AI Agents Configuration
+agents:
+  specializations:
+    - structural_engineering
+    - building_envelope
+    - mechanical_services
+    - electrical_systems
+    - fire_safety
+    - accessibility
+    - environmental_sustainability
+    - health_safety
+    - quality_assurance
+    - legal_compliance
+    - specialist_systems
+    - external_works
+    - finishes
+
+# Multi-Tenant Configuration
+tenancy:
+  enabled: true
+  isolation_level: "database"
+  max_users_per_tenant: 100
+  storage_quota: "10GB"
+
+# Security Settings
+security:
+  encryption:
+    enabled: true
+    algorithm: "AES-256-GCM"
+
+  authentication:
+    jwt_expiry: "24h"
+    refresh_token_expiry: "7d"
+    mfa_enabled: false
+
+  data_retention:
+    default_days: 365
+    gdpr_compliant: true
+
+# RAG Configuration
+rag:
+  chunk_size: 1000
+  chunk_overlap: 200
+  similarity_threshold: 0.7
+  top_k_results: 5
+  reranking_enabled: true
+
+# Logging
+logging:
+  level: "INFO"
+  format: "json"
+  output: "console"
+  file_path: "./logs/app.log"
+  rotation: "daily"
+
+# Monitoring
+monitoring:
+  enabled: false
+  metrics_port: 9090
+  health_check_interval: 60
+
+# API Rate Limiting
+rate_limiting:
+  enabled: true
+  requests_per_minute: 60
+  requests_per_hour: 1000
