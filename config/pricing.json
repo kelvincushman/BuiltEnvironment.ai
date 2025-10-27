@@ -1,0 +1,436 @@
+{
+  "pricing_version": "1.0.0",
+  "currency": "GBP",
+  "billing_periods": ["monthly", "annual"],
+  "trial_period_days": 14,
+
+  "plans": {
+    "starter": {
+      "id": "starter",
+      "name": "Starter",
+      "description": "Perfect for small consultancies and individual engineers getting started with AI-powered tools",
+      "target_audience": "Individual engineers, freelance consultants, small teams (1-3 users)",
+
+      "features": {
+        "users": 3,
+        "projects": 5,
+        "storage_gb": 10,
+        "documents_per_month": 50,
+        "ai_checks_per_month": 100,
+        "ai_agents": ["structural", "fire_safety", "accessibility"],
+        "rag_chat": true,
+        "compliance_checks": ["Part_A", "Part_B", "Part_M"],
+        "standards": ["BS_7671"],
+        "support": "email",
+        "sla_response_time": "48_hours",
+        "audit_retention_days": 90,
+        "api_access": false,
+        "custom_branding": false,
+        "dedicated_account_manager": false,
+        "training_sessions": 0
+      },
+
+      "pricing": {
+        "monthly": {
+          "amount": 99,
+          "stripe_price_id": "price_starter_monthly_gbp",
+          "revenucat_id": "rc_starter_monthly"
+        },
+        "annual": {
+          "amount": 990,
+          "amount_monthly_equivalent": 82.50,
+          "savings_percent": 16.67,
+          "stripe_price_id": "price_starter_annual_gbp",
+          "revenucat_id": "rc_starter_annual"
+        }
+      }
+    },
+
+    "professional": {
+      "id": "professional",
+      "name": "Professional",
+      "description": "Complete solution for growing consultancies with full AI agent access and comprehensive compliance checking",
+      "target_audience": "Small to medium consultancies, engineering firms (4-15 users)",
+      "most_popular": true,
+
+      "features": {
+        "users": 15,
+        "projects": 25,
+        "storage_gb": 100,
+        "documents_per_month": 500,
+        "ai_checks_per_month": 1000,
+        "ai_agents": [
+          "structural",
+          "building_envelope",
+          "mechanical_services",
+          "electrical_systems",
+          "fire_safety",
+          "accessibility",
+          "environmental_sustainability",
+          "health_safety"
+        ],
+        "rag_chat": true,
+        "compliance_checks": "all_parts_A_to_S",
+        "standards": [
+          "BS_7671",
+          "BS_9999",
+          "BS_5250",
+          "BS_8233",
+          "ISO_9001",
+          "ISO_14001",
+          "ISO_19650",
+          "ISO_45001"
+        ],
+        "support": "priority_email_chat",
+        "sla_response_time": "4_hours",
+        "audit_retention_days": 365,
+        "api_access": true,
+        "api_rate_limit": "1000_requests_per_day",
+        "custom_branding": true,
+        "dedicated_account_manager": false,
+        "training_sessions": 2
+      },
+
+      "pricing": {
+        "monthly": {
+          "amount": 499,
+          "stripe_price_id": "price_professional_monthly_gbp",
+          "revenucat_id": "rc_professional_monthly"
+        },
+        "annual": {
+          "amount": 4990,
+          "amount_monthly_equivalent": 415.83,
+          "savings_percent": 16.67,
+          "stripe_price_id": "price_professional_annual_gbp",
+          "revenucat_id": "rc_professional_annual"
+        }
+      }
+    },
+
+    "enterprise": {
+      "id": "enterprise",
+      "name": "Enterprise",
+      "description": "Full-featured platform with unlimited usage, dedicated support, and custom integrations for large organizations",
+      "target_audience": "Large consultancies, major contractors, property developers (16+ users)",
+
+      "features": {
+        "users": "unlimited",
+        "projects": "unlimited",
+        "storage_gb": 1000,
+        "documents_per_month": "unlimited",
+        "ai_checks_per_month": "unlimited",
+        "ai_agents": "all_13_specialized_agents",
+        "rag_chat": true,
+        "compliance_checks": "all_parts_A_to_S_plus_custom",
+        "standards": "all_BS_ISO_CIBSE_plus_custom",
+        "support": "24_7_phone_email_chat_dedicated_slack",
+        "sla_response_time": "1_hour_critical_4_hours_normal",
+        "sla_uptime": "99.9_percent",
+        "audit_retention_days": 2555,
+        "api_access": true,
+        "api_rate_limit": "unlimited",
+        "custom_branding": true,
+        "white_label_option": true,
+        "dedicated_account_manager": true,
+        "training_sessions": "unlimited",
+        "custom_integrations": true,
+        "on_premise_deployment": "available",
+        "advanced_security": "SSO_SAML_custom_encryption"
+      },
+
+      "pricing": {
+        "monthly": {
+          "amount": 1999,
+          "stripe_price_id": "price_enterprise_monthly_gbp",
+          "revenucat_id": "rc_enterprise_monthly"
+        },
+        "annual": {
+          "amount": 19990,
+          "amount_monthly_equivalent": 1665.83,
+          "savings_percent": 16.67,
+          "stripe_price_id": "price_enterprise_annual_gbp",
+          "revenucat_id": "rc_enterprise_annual"
+        },
+        "custom_quote": true,
+        "minimum_contract_months": 12
+      }
+    }
+  },
+
+  "add_ons": {
+    "additional_users": {
+      "id": "addon_users",
+      "name": "Additional Users",
+      "description": "Add extra team members beyond your plan limit",
+      "unit": "per_user_per_month",
+      "pricing": {
+        "starter": {
+          "amount": 25,
+          "stripe_price_id": "price_addon_user_starter_gbp",
+          "revenucat_id": "rc_addon_user_starter"
+        },
+        "professional": {
+          "amount": 20,
+          "stripe_price_id": "price_addon_user_professional_gbp",
+          "revenucat_id": "rc_addon_user_professional"
+        },
+        "enterprise": {
+          "amount": "included",
+          "stripe_price_id": null,
+          "revenucat_id": null
+        }
+      }
+    },
+
+    "additional_storage": {
+      "id": "addon_storage",
+      "name": "Additional Storage",
+      "description": "Expand your document storage capacity",
+      "unit": "per_100gb_per_month",
+      "pricing": {
+        "amount": 50,
+        "stripe_price_id": "price_addon_storage_gbp",
+        "revenucat_id": "rc_addon_storage"
+      }
+    },
+
+    "additional_ai_checks": {
+      "id": "addon_ai_checks",
+      "name": "Additional AI Compliance Checks",
+      "description": "Extra AI compliance checks beyond your monthly quota",
+      "unit": "per_100_checks",
+      "pricing": {
+        "amount": 99,
+        "stripe_price_id": "price_addon_checks_gbp",
+        "revenucat_id": "rc_addon_checks"
+      }
+    },
+
+    "professional_services": {
+      "id": "addon_pro_services",
+      "name": "Professional Services",
+      "description": "Dedicated engineering consultation and project support",
+      "unit": "per_hour",
+      "pricing": {
+        "junior_engineer": {
+          "amount": 75,
+          "description": "Junior Building Services Engineer"
+        },
+        "senior_engineer": {
+          "amount": 125,
+          "description": "Senior Building Services Engineer"
+        },
+        "chartered_engineer": {
+          "amount": 175,
+          "description": "Chartered Engineer (CEng MCIBSE)"
+        }
+      }
+    },
+
+    "custom_training": {
+      "id": "addon_training",
+      "name": "Custom Training",
+      "description": "Tailored training sessions for your team",
+      "unit": "per_half_day_session",
+      "pricing": {
+        "amount": 750,
+        "stripe_price_id": "price_addon_training_gbp",
+        "revenucat_id": "rc_addon_training"
+      }
+    },
+
+    "priority_support": {
+      "id": "addon_priority_support",
+      "name": "Priority Support Upgrade",
+      "description": "Upgrade Starter plan to Professional-level support",
+      "unit": "per_month",
+      "available_for": ["starter"],
+      "pricing": {
+        "amount": 99,
+        "stripe_price_id": "price_addon_priority_support_gbp",
+        "revenucat_id": "rc_addon_priority_support"
+      }
+    }
+  },
+
+  "usage_based_pricing": {
+    "ai_tokens": {
+      "enabled": false,
+      "description": "Future: Pay-per-token pricing for API usage",
+      "pricing": {
+        "input_tokens_per_1M": 3.00,
+        "output_tokens_per_1M": 15.00
+      }
+    }
+  },
+
+  "discounts": {
+    "annual_discount": {
+      "type": "percentage",
+      "value": 16.67,
+      "description": "Save ~17% with annual billing"
+    },
+
+    "educational": {
+      "type": "percentage",
+      "value": 30,
+      "description": "30% discount for educational institutions",
+      "verification_required": true
+    },
+
+    "non_profit": {
+      "type": "percentage",
+      "value": 25,
+      "description": "25% discount for registered charities and non-profits",
+      "verification_required": true
+    },
+
+    "startup": {
+      "type": "percentage",
+      "value": 50,
+      "description": "50% off for 12 months for YC/Techstars/Entrepreneur First companies",
+      "duration_months": 12,
+      "verification_required": true
+    },
+
+    "volume": {
+      "type": "custom",
+      "description": "Custom volume discounts for Enterprise customers with multiple subsidiaries",
+      "contact_sales": true
+    }
+  },
+
+  "payment_terms": {
+    "accepted_methods": [
+      "credit_card",
+      "debit_card",
+      "direct_debit",
+      "bank_transfer",
+      "purchase_order"
+    ],
+
+    "stripe_supported_cards": [
+      "visa",
+      "mastercard",
+      "amex",
+      "discover"
+    ],
+
+    "billing_cycle": {
+      "monthly": "Billed monthly on subscription date",
+      "annual": "Billed annually with 12-month commitment"
+    },
+
+    "auto_renewal": true,
+    "cancellation_policy": "Cancel anytime, no questions asked",
+    "refund_policy": "14-day money-back guarantee, no questions asked",
+    "invoice_net_terms": 30,
+    "late_payment_fee": "5% per month",
+
+    "enterprise_terms": {
+      "minimum_contract": 12,
+      "payment_terms": "Net 30",
+      "custom_invoicing": true,
+      "po_required": true
+    }
+  },
+
+  "regional_pricing": {
+    "GBP": {
+      "region": "United Kingdom",
+      "currency_code": "GBP",
+      "currency_symbol": "£",
+      "vat_rate": 20,
+      "vat_included": false
+    },
+
+    "EUR": {
+      "region": "European Union",
+      "currency_code": "EUR",
+      "currency_symbol": "€",
+      "vat_rate": "varies_by_country",
+      "vat_included": false,
+      "exchange_rate_base": "GBP",
+      "future": true
+    },
+
+    "USD": {
+      "region": "United States",
+      "currency_code": "USD",
+      "currency_symbol": "$",
+      "tax_rate": "varies_by_state",
+      "tax_included": false,
+      "exchange_rate_base": "GBP",
+      "future": true
+    }
+  },
+
+  "fair_usage_policy": {
+    "description": "We maintain fair usage policies to ensure quality service for all customers",
+
+    "limits": {
+      "api_rate_limiting": {
+        "starter": "100 requests per hour",
+        "professional": "1000 requests per hour",
+        "enterprise": "Custom rate limits"
+      },
+
+      "document_size": {
+        "max_file_size_mb": 50,
+        "max_pages_per_document": 500
+      },
+
+      "concurrent_operations": {
+        "starter": "2 concurrent AI checks",
+        "professional": "10 concurrent AI checks",
+        "enterprise": "Unlimited concurrent operations"
+      }
+    },
+
+    "overage_handling": {
+      "documents": "Soft cap with overage fees",
+      "ai_checks": "Soft cap with overage fees",
+      "storage": "Hard cap with upgrade prompt",
+      "users": "Hard cap with upgrade prompt"
+    },
+
+    "overage_pricing": {
+      "documents": "£1 per document over quota",
+      "ai_checks": "£1 per check over quota"
+    }
+  },
+
+  "freemium_model": {
+    "enabled": false,
+    "future_consideration": true,
+    "potential_free_tier": {
+      "users": 1,
+      "projects": 1,
+      "documents_per_month": 5,
+      "ai_checks_per_month": 10,
+      "limited_agents": ["accessibility"],
+      "support": "community_only"
+    }
+  },
+
+  "referral_program": {
+    "enabled": true,
+    "referrer_reward": "£100 credit or 1 month free",
+    "referee_reward": "£50 credit or 50% off first month",
+    "conditions": "Referee must subscribe to paid plan for 3+ months"
+  },
+
+  "pricing_philosophy": {
+    "transparency": "No hidden fees, clear pricing",
+    "flexibility": "Monthly or annual, cancel anytime",
+    "value": "Priced to deliver 10x ROI through time savings",
+    "fairness": "Fair usage policies protect all customers",
+    "growth": "Grow with you from startup to enterprise"
+  },
+
+  "competitive_positioning": {
+    "value_proposition": "50% faster project delivery at 40% lower cost than traditional consultancies",
+    "roi_calculation": "Average customer saves £50,000 per year in reduced delivery time and compliance costs",
+    "price_comparison": "Professional plan (£499/mo) = cost of 3-4 hours of traditional consultant time, but provides unlimited AI assistance"
+  }
+}
