@@ -163,6 +163,20 @@ This document lists all the technical standards, guidelines, and frameworks that
 - **PAS 1192-3**: Specification for Information Management for the Operational Phase of Assets
 - **BS EN ISO 19650**: Organization and Digitization of Information (BIM Level 2)
 
+### COBie (Construction Operations Building Information Exchange)
+- **COBie UK 2012**: UK implementation of COBie data exchange standard
+- **BS 1192-4**: Collaborative Production of Information - Fulfilling Employer's Information Exchange Requirements using COBie
+- **COBie Data Drops**: Stage-based information delivery (Design, Construction, Handover)
+- **COBie Spreadsheet Format**: Standardized Excel template for data exchange
+- **COBie IFC Integration**: Integration with Industry Foundation Classes for BIM
+- **COBie Responsibility Matrix**: Defining roles for data population and validation
+- **COBie Quality Assurance**: Data validation and verification procedures
+- **COBie Asset Register Integration**: Connection to facilities management systems
+- **COBie Maintenance Schedule**: Planned maintenance and lifecycle data
+- **COBie Warranty Information**: Product warranties and guarantees data
+- **COBie Spare Parts Data**: Replacement parts and supplier information
+- **COBie Training Requirements**: Operational training and certification data
+
 ## Mechanical & Electrical Standards
 
 ### IET (Institution of Engineering and Technology)

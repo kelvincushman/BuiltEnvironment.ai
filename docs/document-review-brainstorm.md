@@ -14,6 +14,7 @@ Create an intelligent document review system that acts like having multiple expe
 - **Safety Documents**: Risk assessments, method statements, CDM documentation
 - **Environmental Documents**: BREEAM assessments, energy calculations, sustainability reports
 - **Cost Documents**: Bills of quantities, cost plans, value engineering reports
+- **COBie Data**: Asset registers, maintenance schedules, handover information, facilities management data
 
 ### What compliance issues should we catch?
 - **Regulatory Non-Compliance**: Building Regulations breaches, planning policy conflicts
@@ -22,6 +23,8 @@ Create an intelligent document review system that acts like having multiple expe
 - **Environmental Issues**: BREEAM requirement failures, energy performance gaps
 - **Contract Risks**: Unfavorable terms, liability issues, payment risks
 - **Technical Errors**: Calculation mistakes, specification conflicts, design coordination issues
+- **COBie Data Issues**: Missing asset information, incomplete maintenance schedules, broken system relationships
+- **Handover Deficiencies**: Insufficient facilities management data, missing warranties, incomplete training materials
 
 ### How should users interact with the system?
 - **Document Upload**: Drag-and-drop, bulk upload, integration with existing systems

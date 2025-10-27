@@ -96,7 +96,7 @@ Document Upload
   4. Calculates ROI for upgrades
 - **Output**: Sustainability optimization report
 
-**Risk Assessment AI Module**:
+**Risk Assessment Module**:
 - **Input**: All document types
 - **Process**:
   1. Identifies potential project risks
@@ -104,6 +104,15 @@ Document Upload
   3. Suggests mitigation strategies
   4. Creates risk register
 - **Output**: Comprehensive risk assessment
+
+**COBie Data Validation Module**:
+- **Input**: COBie spreadsheets, asset registers, handover documentation
+- **Process**:
+  1. Validates COBie data structure and completeness
+  2. Cross-references with specifications and drawings
+  3. Checks relationships between spaces, systems, and components
+  4. Verifies warranty and maintenance information
+- **Output**: COBie compliance report with handover readiness assessment
 
 ### Phase 3: Knowledge Base Integration
 
