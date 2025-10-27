@@ -1,0 +1,61 @@
+graph TB
+    subgraph "Document Review Interface"
+        A[Header: BuiltEnvironment.ai Document Review]
+        
+        subgraph "Left Panel - Navigation & Summary"
+            B[Document Tree Navigation]
+            C[Overall Compliance Score: 78%]
+            D[🟢 Green: 45 items]
+            E[🟡 Amber: 12 items]  
+            F[🔴 Red: 3 items]
+            G[Filter Controls]
+        end
+        
+        subgraph "Center Panel - Document Viewer"
+            H[Document Display Area]
+            I[🟢 Compliant Section]
+            J[🟡 Attention Required]
+            K[🔴 Non-Compliant Issue]
+            L[Zoom & Navigation Controls]
+            M[Search Bar]
+        end
+        
+        subgraph "Right Panel - Compliance Details"
+            N[Issue Details Panel]
+            O[Regulation Reference: BS 7671]
+            P[Recommended Action]
+            Q[Assign to Team Member]
+            R[Add Comment]
+            S[Mark as Resolved]
+        end
+        
+        subgraph "Bottom Panel - Action Bar"
+            T[Generate Report]
+            U[Export Annotations]
+            V[Share with Team]
+            W[Schedule Engineer Review]
+        end
+    end
+    
+    A --> B
+    A --> H  
+    A --> N
+    B --> C
+    C --> D
+    C --> E
+    C --> F
+    H --> I
+    H --> J
+    H --> K
+    J --> N
+    K --> N
+    N --> O
+    O --> P
+    
+    style C fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style D fill:#10B981,color:#fff
+    style E fill:#F59E0B,color:#fff
+    style F fill:#EF4444,color:#fff
+    style I fill:#D1FAE5,stroke:#10B981
+    style J fill:#FEF3C7,stroke:#F59E0B
+    style K fill:#FEE2E2,stroke:#EF4444
