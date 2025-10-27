@@ -22,6 +22,12 @@ Complete documentation for BuiltEnvironment.ai - an AI-powered building services
 - [`multi-tenant-dashboard-specifications.md`](architecture/multi-tenant-dashboard-specifications.md) - Multi-tenant dashboard and project management
 - [`rag-database-integration-specs.md`](architecture/rag-database-integration-specs.md) - RAG database with real-time updates
 
+**Audit System (`/architecture/audit/`)**
+- [`comprehensive-audit-system-architecture.md`](architecture/audit/comprehensive-audit-system-architecture.md) - Complete audit system design with event schema
+- [`langgraph-langflow-audit-integration.md`](architecture/audit/langgraph-langflow-audit-integration.md) - AI agent audit trail integration guide
+- [`audit-implementation-guide.md`](architecture/audit/audit-implementation-guide.md) - Step-by-step implementation instructions
+- [`audit-dashboard-specifications.md`](architecture/audit/audit-dashboard-specifications.md) - Audit UI/UX dashboards and visualizations
+
 ### 🔧 Implementation Guides (`/implementation/`)
 
 **Development Implementation**
