@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from .core.config import settings
 from .db.base import init_db, close_db
 from .api.v1.api import api_router
+from .middleware.tenant_context import TenantContextMiddleware
 
 
 @asynccontextmanager
@@ -41,6 +42,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add tenant context middleware for multi-tenancy
+app.add_middleware(TenantContextMiddleware)
 
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
