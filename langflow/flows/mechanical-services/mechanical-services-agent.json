@@ -1,0 +1,15 @@
+{
+  "name": "mechanical-services-agent",
+  "description": "Mechanical Services compliance checking agent for Parts F, G, H, J",
+  "version": "1.0.0",
+  "nodes": [],
+  "edges": [],
+  "metadata": {
+    "agent_type": "mechanical_services",
+    "regulations": ["Part F", "Part G1", "Part G2", "Part G3", "Part H", "Part J"],
+    "british_standards": ["BS 5925", "BS 6700", "BS EN 12056", "BS 5440"],
+    "rag_enabled": true,
+    "rag_collection": "mechanical_services_regulations"
+  },
+  "placeholder": true
+}

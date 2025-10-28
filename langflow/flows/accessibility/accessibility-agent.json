@@ -1,0 +1,15 @@
+{
+  "name": "accessibility-agent",
+  "description": "Accessibility compliance checking agent for Part M and BS 8300",
+  "version": "1.0.0",
+  "nodes": [],
+  "edges": [],
+  "metadata": {
+    "agent_type": "accessibility",
+    "regulations": ["Part M1", "Part M2", "Part M3", "Part M4"],
+    "british_standards": ["BS 8300-1", "BS 8300-2"],
+    "rag_enabled": true,
+    "rag_collection": "accessibility_regulations"
+  },
+  "placeholder": true
+}

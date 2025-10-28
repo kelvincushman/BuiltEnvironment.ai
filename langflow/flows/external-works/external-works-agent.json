@@ -1,0 +1,15 @@
+{
+  "name": "external-works-agent",
+  "description": "External Works compliance checking agent for drainage, SuDS, landscaping",
+  "version": "1.0.0",
+  "nodes": [],
+  "edges": [],
+  "metadata": {
+    "agent_type": "external_works",
+    "regulations": ["Part H", "Highways Act 1980 S38/S278"],
+    "british_standards": ["BS EN 752", "BS EN 1610", "CIRIA C753 SuDS Manual"],
+    "rag_enabled": true,
+    "rag_collection": "external_works_regulations"
+  },
+  "placeholder": true
+}

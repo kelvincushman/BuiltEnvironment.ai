@@ -1,0 +1,15 @@
+{
+  "name": "building-envelope-agent",
+  "description": "Building Envelope compliance checking agent for Parts C and L",
+  "version": "1.0.0",
+  "nodes": [],
+  "edges": [],
+  "metadata": {
+    "agent_type": "building_envelope",
+    "regulations": ["Part C1", "Part C2", "Part L1A", "Part L2A"],
+    "british_standards": ["BS EN ISO 6946", "BS EN ISO 13788", "BS 5250"],
+    "rag_enabled": true,
+    "rag_collection": "building_envelope_regulations"
+  },
+  "placeholder": true
+}

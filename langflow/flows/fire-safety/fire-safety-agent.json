@@ -1,0 +1,16 @@
+{
+  "name": "fire-safety-agent",
+  "description": "Fire Safety compliance checking agent for Part B regulations",
+  "version": "1.0.0",
+  "nodes": [],
+  "edges": [],
+  "metadata": {
+    "agent_type": "fire_safety",
+    "regulations": ["Part B1", "Part B2", "Part B3", "Part B4", "Part B5"],
+    "british_standards": ["BS 5839-1", "BS 9999", "BS EN 12845"],
+    "rag_enabled": true,
+    "rag_collection": "fire_safety_regulations"
+  },
+  "placeholder": true,
+  "instructions": "Build this workflow visually in Langflow using the custom components from langflow/components/"
+}

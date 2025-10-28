@@ -1,0 +1,15 @@
+{
+  "name": "quality-assurance-agent",
+  "description": "Quality Assurance compliance checking agent for testing, commissioning, and certification",
+  "version": "1.0.0",
+  "nodes": [],
+  "edges": [],
+  "metadata": {
+    "agent_type": "quality_assurance",
+    "regulations": ["CPR", "CE Marking", "UKCA Marking"],
+    "british_standards": ["BS EN 206", "BS 1881", "BS 6375", "CIBSE Code M"],
+    "rag_enabled": true,
+    "rag_collection": "quality_assurance_standards"
+  },
+  "placeholder": true
+}

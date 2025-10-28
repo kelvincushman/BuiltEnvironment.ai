@@ -1,0 +1,28 @@
+{
+  "name": "master-orchestration",
+  "description": "Master orchestration workflow coordinating all 13 specialist compliance agents",
+  "version": "1.0.0",
+  "nodes": [],
+  "edges": [],
+  "metadata": {
+    "workflow_type": "master_orchestrator",
+    "specialist_agents": [
+      "structural",
+      "fire_safety",
+      "building_envelope",
+      "mechanical_services",
+      "electrical_services",
+      "accessibility",
+      "environmental_sustainability",
+      "health_safety",
+      "quality_assurance",
+      "legal_contracts",
+      "specialist_systems",
+      "external_works",
+      "finishes_interiors"
+    ],
+    "parallel_execution": true,
+    "conflict_detection_enabled": true
+  },
+  "placeholder": true
+}

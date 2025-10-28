@@ -1,0 +1,14 @@
+{
+  "name": "legal-contracts-agent",
+  "description": "Legal & Contracts compliance checking agent for JCT/NEC contracts and warranties",
+  "version": "1.0.0",
+  "nodes": [],
+  "edges": [],
+  "metadata": {
+    "agent_type": "legal_contracts",
+    "contract_types": ["JCT SBC", "JCT DB", "NEC4 ECC", "FIDIC"],
+    "rag_enabled": true,
+    "rag_collection": "legal_contracts_knowledge"
+  },
+  "placeholder": true
+}
