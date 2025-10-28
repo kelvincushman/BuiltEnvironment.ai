@@ -17,6 +17,12 @@ from ....models.project import Project
 from ....schemas.document import Document as DocumentSchema, DocumentUpdate
 from ....core.security import CurrentUser
 from ....core.config import settings
+from ....services.storage_service import storage_service
+from ....services.text_extraction_service import text_extraction_service
+from ....services.usage_tracker import usage_tracker
+from ....services.audit_logger import audit_logger
+from ....models.audit import EventType
+from ....schemas.document import DocumentUploadResponse
 
 router = APIRouter()
 
@@ -75,7 +81,7 @@ async def save_upload_file(
     return str(file_path), unique_filename, file_size
 
 
-@router.post("/upload", response_model=DocumentSchema, status_code=status.HTTP_201_CREATED)
+@router.post("/upload", response_model=DocumentUploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
     project_id: UUID = Form(...),
     document_type: Optional[str] = Form("other"),
@@ -87,20 +93,29 @@ async def upload_document(
     Upload a document to a project.
 
     This endpoint:
-    1. Validates the file
-    2. Saves it to disk
-    3. Creates a database record
-    4. Triggers async processing (text extraction, AI analysis)
+    1. Checks usage limits (documents and storage)
+    2. Validates the file type
+    3. Saves file to storage
+    4. Extracts text (PDF/images)
+    5. Creates database record
+    6. Logs audit event
+    7. Returns document with extraction status
     """
+    tenant_id = UUID(current_user.tenant_id)
+    user_id = UUID(current_user.user_id)
 
-    # Validate file
-    validate_file(file)
+    # Validate file extension
+    if not storage_service.is_allowed_extension(file.filename):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File type not allowed. Allowed types: {', '.join(storage_service.get_allowed_extensions())}",
+        )
 
     # Check project exists and user has access
     result = await db.execute(
         select(Project).where(
             Project.id == project_id,
-            Project.tenant_id == UUID(current_user.tenant_id),
+            Project.tenant_id == tenant_id,
         )
     )
     project = result.scalar_one_or_none()
@@ -111,38 +126,110 @@ async def upload_document(
             detail="Project not found",
         )
 
-    # Save file
-    file_path, filename, file_size = await save_upload_file(
-        file, current_user.tenant_id, str(project_id)
+    # Check document limit
+    await usage_tracker.check_document_limit(tenant_id, db)
+
+    # Read file content and check size
+    file_content = await file.read()
+    file_size = len(file_content)
+
+    # Check storage limit
+    await usage_tracker.check_storage_limit(tenant_id, file_size, db)
+
+    # Check max file size
+    if file_size > settings.MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File too large. Maximum size: {settings.MAX_UPLOAD_SIZE_MB}MB",
+        )
+
+    # Create document ID
+    document_id = uuid4()
+
+    # Save file to storage
+    from io import BytesIO
+    file_obj = BytesIO(file_content)
+
+    save_result = await storage_service.save_file(
+        file=file_obj,
+        tenant_id=tenant_id,
+        project_id=project_id,
+        document_id=document_id,
+        filename=file.filename,
     )
+
+    # Get MIME type
+    mime_type = storage_service.get_mime_type(file.filename)
 
     # Create document record
     document = Document(
-        tenant_id=UUID(current_user.tenant_id),
+        id=document_id,
+        tenant_id=tenant_id,
         project_id=project_id,
-        filename=filename,
+        filename=Path(save_result["file_path"]).name,
         original_filename=file.filename,
-        file_path=file_path,
-        file_size=file_size,
-        mime_type=file.content_type or "application/octet-stream",
+        file_path=save_result["file_path"],
+        file_size=save_result["file_size"],
+        mime_type=mime_type,
         file_extension=get_file_extension(file.filename),
         document_type=DocumentType(document_type) if document_type else DocumentType.OTHER,
-        status=DocumentStatus.UPLOADED,
+        status=DocumentStatus.PROCESSING,
         ai_analysis={},
         compliance_findings={},
     )
 
     db.add(document)
     await db.commit()
+
+    # Extract text in background (non-blocking for user)
+    extraction_status = "pending"
+    pages_extracted = None
+
+    try:
+        extraction_result = await text_extraction_service.extract_from_file(
+            file_path=Path(save_result["file_path"]),
+            mime_type=mime_type,
+        )
+
+        # Update document with extracted text
+        document.extracted_text = extraction_result["text"]
+        document.page_count = extraction_result["page_count"]
+        document.status = DocumentStatus.INDEXED
+        document.processed_at = None  # Will be set after AI analysis
+
+        await db.commit()
+
+        extraction_status = extraction_result["method"]
+        pages_extracted = extraction_result["page_count"]
+
+    except Exception as e:
+        # Don't fail upload if text extraction fails
+        import logging
+        logging.error(f"Text extraction failed: {e}")
+        extraction_status = "failed"
+        document.status = DocumentStatus.UPLOADED
+        await db.commit()
+
     await db.refresh(document)
 
-    # TODO: Trigger async processing
-    # - Extract text from PDF/DOCX
-    # - Index in ChromaDB
-    # - Run AI analysis
-    # - Generate compliance findings
+    # Log audit event
+    await audit_logger.log_user_action(
+        tenant_id=tenant_id,
+        user_id=user_id,
+        action="upload",
+        event_type=EventType.DOCUMENT_UPLOAD,
+        status="success",
+        description=f"Uploaded document '{file.filename}' to project '{project.name}'",
+        resource_type="document",
+        resource_id=document.id,
+    )
 
-    return document
+    return DocumentUploadResponse(
+        document=document,
+        message="Document uploaded and processed successfully",
+        extraction_status=extraction_status,
+        pages_extracted=pages_extracted,
+    )
 
 
 @router.get("/", response_model=List[DocumentSchema])

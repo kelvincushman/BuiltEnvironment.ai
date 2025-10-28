@@ -81,9 +81,10 @@ class Settings(BaseSettings):
         return f"http://{self.CHROMA_HOST}:{self.CHROMA_PORT}"
 
     # File Storage
-    UPLOAD_DIR: str = "/app/uploads"
-    MAX_UPLOAD_SIZE: int = 104857600  # 100MB in bytes
-    MAX_UPLOAD_SIZE_MB: int = 100
+    STORAGE_TYPE: str = "local"  # "local" or "s3"
+    UPLOAD_DIR: str = "./uploads"
+    MAX_UPLOAD_SIZE: int = 52428800  # 50MB in bytes
+    MAX_UPLOAD_SIZE_MB: int = 50
     ALLOWED_EXTENSIONS: List[str] = [".pdf", ".docx", ".doc", ".png", ".jpg", ".jpeg", ".dwg"]
 
     # CORS - Parse from comma-separated string if provided
