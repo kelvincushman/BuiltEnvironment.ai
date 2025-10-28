@@ -10,6 +10,8 @@ from .core.config import settings
 from .db.base import init_db, close_db
 from .api.v1.api import api_router
 from .middleware.tenant_context import TenantContextMiddleware
+from .middleware.audit_middleware import AuditMiddleware
+from .services.audit_logger import audit_logger
 
 
 @asynccontextmanager
@@ -20,7 +22,17 @@ async def lifespan(app: FastAPI):
     # Startup: Initialize database
     await init_db()
     print("✅ Database initialized")
+
+    # Startup: Start audit logger
+    await audit_logger.start()
+    print("✅ Audit logger started")
+
     yield
+
+    # Shutdown: Stop audit logger and flush events
+    await audit_logger.stop()
+    print("👋 Audit logger stopped")
+
     # Shutdown: Close database connections
     await close_db()
     print("👋 Database connections closed")
@@ -45,6 +57,9 @@ app.add_middleware(
 
 # Add tenant context middleware for multi-tenancy
 app.add_middleware(TenantContextMiddleware)
+
+# Add audit middleware for request tracking
+app.add_middleware(AuditMiddleware)
 
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)

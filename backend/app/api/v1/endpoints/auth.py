@@ -25,6 +25,8 @@ from ....core.security import (
     create_refresh_token,
     decode_token,
 )
+from ....services.audit_logger import audit_logger
+from ....models.audit import EventType
 
 router = APIRouter()
 
@@ -112,6 +114,21 @@ async def register(
     db.add(user)
     await db.commit()
 
+    # Log registration audit event
+    await audit_logger.log_event(
+        tenant_id=tenant.id,
+        event_type=EventType.USER_AUTH,
+        action="register",
+        actor_type="user",
+        actor_id=str(user.id),
+        user_id=user.id,
+        status="success",
+        description=f"New tenant '{tenant.name}' registered with admin user '{user.email}'",
+        resource_type="tenant",
+        resource_id=tenant.id,
+        immediate=True,
+    )
+
     # Generate tokens
     token_data = {
         "sub": str(user.id),
@@ -166,6 +183,16 @@ async def login(
     # Update last login
     user.last_login_at = datetime.utcnow()
     await db.commit()
+
+    # Log login audit event
+    await audit_logger.log_user_action(
+        tenant_id=user.tenant_id,
+        user_id=user.id,
+        action="login",
+        event_type=EventType.USER_AUTH,
+        status="success",
+        description=f"User '{user.email}' logged in successfully",
+    )
 
     # Generate tokens
     token_data = {

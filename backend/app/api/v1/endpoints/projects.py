@@ -13,6 +13,8 @@ from ....models.project import Project, ProjectStatus
 from ....models.user import User
 from ....schemas.project import Project as ProjectSchema, ProjectCreate, ProjectUpdate
 from ....core.security import CurrentUser
+from ....services.audit_logger import audit_logger
+from ....models.audit import EventType
 
 router = APIRouter()
 
@@ -47,6 +49,18 @@ async def create_project(
     db.add(project)
     await db.commit()
     await db.refresh(project)
+
+    # Log project creation audit event
+    await audit_logger.log_user_action(
+        tenant_id=UUID(current_user.tenant_id),
+        user_id=UUID(current_user.user_id),
+        action="create",
+        event_type=EventType.USER_ACTION,
+        status="success",
+        description=f"Created project '{project.name}'",
+        resource_type="project",
+        resource_id=project.id,
+    )
 
     return project
 
