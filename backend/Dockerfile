@@ -56,6 +56,9 @@ COPY . .
 # Create data directories
 RUN mkdir -p /app/uploads /app/data/chroma && chmod 777 /app/uploads
 
+# Make startup script executable
+RUN chmod +x /app/scripts/startup.sh
+
 # Expose port
 EXPOSE 8000
 
@@ -63,8 +66,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Default command (can be overridden in docker-compose)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Use startup script (runs migrations then starts app)
+CMD ["/app/scripts/startup.sh"]
 
 # ============================================================================
 # Production Stage (for Dokploy deployment)
@@ -84,6 +87,9 @@ COPY . .
 # Create data directories with restricted permissions
 RUN mkdir -p /app/uploads /app/data/chroma && chmod 755 /app/uploads
 
+# Make startup script executable
+RUN chmod +x /app/scripts/startup.sh
+
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app
@@ -98,14 +104,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Production command with Gunicorn + Uvicorn workers
-CMD ["gunicorn", "app.main:app", \
-     "--workers", "4", \
-     "--worker-class", "uvicorn.workers.UvicornWorker", \
-     "--bind", "0.0.0.0:8000", \
-     "--access-logfile", "-", \
-     "--error-logfile", "-", \
-     "--log-level", "info", \
-     "--timeout", "120", \
-     "--graceful-timeout", "30", \
-     "--keep-alive", "5"]
+# Use startup script (runs migrations then starts app)
+CMD ["/app/scripts/startup.sh"]

@@ -29,9 +29,10 @@ The script will:
 1. Check Docker is running
 2. Create `.env` file from template
 3. Prompt you to add your API keys
-4. Start all services
-5. Wait for health checks
-6. Show you access URLs
+4. Start all services (PostgreSQL, Redis, ChromaDB, Langflow, Backend)
+5. Run database migrations automatically
+6. Wait for health checks
+7. Show you access URLs
 
 ### Option 2: Manual Setup
 
@@ -85,7 +86,7 @@ Your full stack includes:
 2. **Redis** - Caching and session storage
 3. **ChromaDB** - Vector database for RAG
 4. **Langflow** - Visual AI workflow orchestration (your 13 specialist agents)
-5. **FastAPI Backend** - Your API application
+5. **FastAPI Backend** - Your API application (with automatic database migrations on startup)
 
 ---
 
@@ -112,6 +113,11 @@ docker-compose restart backend
 
 # Rebuild backend after code changes
 docker-compose up -d --build backend
+
+# Database Migrations (run inside backend container)
+docker exec builtenvironment-backend alembic current        # Check current migration
+docker exec builtenvironment-backend alembic upgrade head   # Apply latest migrations
+docker exec builtenvironment-backend alembic history        # View migration history
 ```
 
 ---

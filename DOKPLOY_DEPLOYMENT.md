@@ -106,6 +106,7 @@ SMTP_FROM=noreply@builtenvironment.ai
 2. Dokploy will automatically:
    - Build the Docker image
    - Deploy the container
+   - Run database migrations on startup (via startup.sh)
    - Set up HTTPS with Let's Encrypt
    - Configure health checks
 
