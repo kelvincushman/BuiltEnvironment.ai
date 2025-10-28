@@ -3,6 +3,7 @@ Document endpoints for uploading and managing building documents.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List, Optional
@@ -10,6 +11,7 @@ from uuid import UUID, uuid4
 import os
 import shutil
 from pathlib import Path
+import mimetypes
 
 from ....db.base import get_db
 from ....models.document import Document, DocumentStatus, DocumentType
@@ -285,21 +287,25 @@ async def get_document(
     return document
 
 
-@router.patch("/{document_id}", response_model=DocumentSchema)
-async def update_document(
+@router.get("/{document_id}/download")
+async def download_document(
     document_id: UUID,
-    document_data: DocumentUpdate,
     current_user: CurrentUser = Depends(),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Update document metadata (type, engineer notes).
-    """
+    Download a document file.
 
+    Returns the file with appropriate headers for download or inline viewing.
+    """
+    tenant_id = UUID(current_user.tenant_id)
+    user_id = UUID(current_user.user_id)
+
+    # Get document
     result = await db.execute(
         select(Document).where(
             Document.id == document_id,
-            Document.tenant_id == UUID(current_user.tenant_id),
+            Document.tenant_id == tenant_id,
         )
     )
     document = result.scalar_one_or_none()
@@ -310,16 +316,96 @@ async def update_document(
             detail="Document not found",
         )
 
-    # Update fields
+    # Check if file exists
+    file_path = Path(document.file_path)
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document file not found on disk",
+        )
+
+    # Log download audit event
+    await audit_logger.log_user_action(
+        tenant_id=tenant_id,
+        user_id=user_id,
+        action="download",
+        event_type=EventType.DOCUMENT_DOWNLOAD,
+        status="success",
+        description=f"Downloaded document '{document.original_filename}'",
+        resource_type="document",
+        resource_id=document.id,
+    )
+
+    # Return file with proper headers
+    return FileResponse(
+        path=file_path,
+        media_type=document.mime_type or "application/octet-stream",
+        filename=document.original_filename,
+        headers={
+            "Content-Disposition": f'attachment; filename="{document.original_filename}"'
+        }
+    )
+
+
+@router.patch("/{document_id}", response_model=DocumentSchema)
+async def update_document(
+    document_id: UUID,
+    document_data: DocumentUpdate,
+    current_user: CurrentUser = Depends(),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update document metadata (type, engineer notes).
+    """
+    tenant_id = UUID(current_user.tenant_id)
+    user_id = UUID(current_user.user_id)
+
+    result = await db.execute(
+        select(Document).where(
+            Document.id == document_id,
+            Document.tenant_id == tenant_id,
+        )
+    )
+    document = result.scalar_one_or_none()
+
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    # Track what changed for audit log
+    changes = []
     update_data = document_data.model_dump(exclude_unset=True)
+
     for field, value in update_data.items():
         if field == "document_type" and value:
+            old_value = document.document_type.value if document.document_type else None
+            new_value = value
+            if old_value != new_value:
+                changes.append(f"{field}: {old_value} → {new_value}")
             setattr(document, field, DocumentType(value))
         else:
+            old_value = getattr(document, field)
+            if old_value != value:
+                changes.append(f"{field}: updated")
             setattr(document, field, value)
 
     await db.commit()
     await db.refresh(document)
+
+    # Log audit event
+    if changes:
+        await audit_logger.log_user_action(
+            tenant_id=tenant_id,
+            user_id=user_id,
+            action="update",
+            event_type=EventType.DOCUMENT_UPDATE,
+            status="success",
+            description=f"Updated document '{document.original_filename}': {', '.join(changes)}",
+            resource_type="document",
+            resource_id=document.id,
+        )
 
     return document
 
@@ -332,12 +418,19 @@ async def delete_document(
 ):
     """
     Delete a document and its associated file.
+
+    This permanently removes:
+    - The file from storage
+    - The database record
+    - Any associated metadata
     """
+    tenant_id = UUID(current_user.tenant_id)
+    user_id = UUID(current_user.user_id)
 
     result = await db.execute(
         select(Document).where(
             Document.id == document_id,
-            Document.tenant_id == UUID(current_user.tenant_id),
+            Document.tenant_id == tenant_id,
         )
     )
     document = result.scalar_one_or_none()
@@ -348,12 +441,37 @@ async def delete_document(
             detail="Document not found",
         )
 
-    # Delete file from disk
-    if os.path.exists(document.file_path):
-        os.remove(document.file_path)
+    # Store info for audit log before deletion
+    filename = document.original_filename
+    file_size = document.file_size
+
+    # Delete file from storage using storage service
+    try:
+        await storage_service.delete_file(
+            tenant_id=tenant_id,
+            project_id=document.project_id,
+            document_id=document_id,
+            filename=document.filename,
+        )
+    except Exception as e:
+        # Log error but continue with database deletion
+        import logging
+        logging.error(f"Failed to delete file from storage: {e}")
 
     # Delete database record
     await db.delete(document)
     await db.commit()
+
+    # Log audit event
+    await audit_logger.log_user_action(
+        tenant_id=tenant_id,
+        user_id=user_id,
+        action="delete",
+        event_type=EventType.DOCUMENT_DELETE,
+        status="success",
+        description=f"Deleted document '{filename}' ({file_size} bytes)",
+        resource_type="document",
+        resource_id=document_id,
+    )
 
     return None
