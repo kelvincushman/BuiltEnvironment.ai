@@ -47,6 +47,7 @@ class User(Base):
 
     # Relationships
     tenant = relationship("Tenant", back_populates="users")
+    conversations = relationship("Conversation", back_populates="user", foreign_keys="Conversation.user_id")
     audit_events = relationship("AuditEvent", back_populates="user", foreign_keys="AuditEvent.user_id")
 
     @property

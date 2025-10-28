@@ -88,6 +88,7 @@ class Project(Base):
     # Relationships
     tenant = relationship("Tenant", back_populates="projects")
     documents = relationship("Document", back_populates="project", cascade="all, delete-orphan")
+    conversations = relationship("Conversation", back_populates="project", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Project {self.name} ({self.status.value})>"
