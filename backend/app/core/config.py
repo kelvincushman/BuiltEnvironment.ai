@@ -80,6 +80,9 @@ class Settings(BaseSettings):
         """Construct ChromaDB URL."""
         return f"http://{self.CHROMA_HOST}:{self.CHROMA_PORT}"
 
+    # DeepSeek-OCR (High-accuracy OCR for technical drawings)
+    DEEPSEEK_OCR_URL: str = "http://deepseek-ocr:8000"
+
     # File Storage
     STORAGE_TYPE: str = "local"  # "local" or "s3"
     UPLOAD_DIR: str = "./uploads"

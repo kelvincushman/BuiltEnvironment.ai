@@ -32,11 +32,16 @@ chromadb==0.4.22
 openai==1.12.0
 tiktoken==0.6.0
 
-# Document Processing
+# Document Processing & OCR
 pypdf2==3.0.1
 python-docx==1.1.0
 pillow==10.2.0
-pytesseract==0.3.10
+
+# Multi-OCR Strategy (High Accuracy for Building Documents)
+pytesseract==0.3.10        # Fallback OCR (simple, reliable)
+docling==1.0.0             # Advanced document processing (tables, complex layouts)
+pdf2image==1.16.3          # PDF to image conversion for OCR
+requests==2.31.0           # For DeepSeek-OCR API calls
 
 # Utilities
 httpx==0.26.0

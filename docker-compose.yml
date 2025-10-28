@@ -64,6 +64,37 @@ services:
     networks:
       - builtenvironment
 
+  # DeepSeek-OCR Service (High-accuracy OCR for technical drawings)
+  deepseek-ocr:
+    image: fufankeji/deepseek-ocr-web:latest
+    container_name: builtenvironment-deepseek-ocr
+    restart: unless-stopped
+    ports:
+      - "${DEEPSEEK_OCR_PORT:-8002}:8000"
+    environment:
+      # DeepSeek-OCR Configuration
+      MODEL_PATH: /app/models
+      MAX_IMAGE_SIZE: "20971520"  # 20MB max image size
+      WORKERS: ${DEEPSEEK_OCR_WORKERS:-2}
+    volumes:
+      - deepseek_models:/app/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s  # Model loading takes time
+    networks:
+      - builtenvironment
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+
   # Langflow AI Workflow Orchestration
   langflow:
     image: langflowai/langflow:latest
@@ -119,6 +150,9 @@ services:
       CHROMA_HOST: chromadb
       CHROMA_PORT: 8000
 
+      # DeepSeek-OCR
+      DEEPSEEK_OCR_URL: http://deepseek-ocr:8000
+
       # Langflow
       LANGFLOW_URL: http://langflow:7860
       LANGFLOW_API_KEY: ${LANGFLOW_API_KEY}
@@ -170,6 +204,8 @@ services:
         condition: service_healthy
       chromadb:
         condition: service_healthy
+      deepseek-ocr:
+        condition: service_healthy
       langflow:
         condition: service_healthy
     healthcheck:
@@ -214,6 +250,8 @@ volumes:
   redis_data:
     driver: local
   chroma_data:
+    driver: local
+  deepseek_models:
     driver: local
   langflow_data:
     driver: local
