@@ -12,6 +12,7 @@ from .api.v1.api import api_router
 from .middleware.tenant_context import TenantContextMiddleware
 from .middleware.audit_middleware import AuditMiddleware
 from .services.audit_logger import audit_logger
+from .services.rag_service import rag_service
 
 
 @asynccontextmanager
@@ -27,7 +28,15 @@ async def lifespan(app: FastAPI):
     await audit_logger.start()
     print("✅ Audit logger started")
 
+    # Startup: Initialize RAG service (ChromaDB connection)
+    await rag_service.initialize()
+    print("✅ RAG service initialized")
+
     yield
+
+    # Shutdown: Stop RAG service
+    await rag_service.shutdown()
+    print("👋 RAG service shutdown")
 
     # Shutdown: Stop audit logger and flush events
     await audit_logger.stop()

@@ -2,7 +2,7 @@
 Document endpoints for uploading and managing building documents.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, BackgroundTasks
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -12,6 +12,7 @@ import os
 import shutil
 from pathlib import Path
 import mimetypes
+import logging
 
 from ....db.base import get_db
 from ....models.document import Document, DocumentStatus, DocumentType
@@ -23,10 +24,53 @@ from ....services.storage_service import storage_service
 from ....services.text_extraction_service import text_extraction_service
 from ....services.usage_tracker import usage_tracker
 from ....services.audit_logger import audit_logger
+from ....services.rag_service import rag_service
 from ....models.audit import EventType
 from ....schemas.document import DocumentUploadResponse
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
+
+
+async def index_document_background(
+    document_id: UUID,
+    tenant_id: UUID,
+    project_id: UUID,
+    extracted_text: str,
+    page_count: Optional[int],
+    filename: str,
+    document_type: str,
+):
+    """
+    Background task to index a document for RAG retrieval.
+
+    This runs asynchronously after document upload completes,
+    so it doesn't block the user's upload response.
+    """
+    try:
+        metadata = {
+            "filename": filename,
+            "document_type": document_type,
+        }
+
+        result = await rag_service.index_document(
+            document_id=document_id,
+            tenant_id=tenant_id,
+            project_id=project_id,
+            text=extracted_text,
+            page_count=page_count,
+            document_metadata=metadata,
+            agent_names=None,  # Index for all agents by default
+        )
+
+        logger.info(
+            f"Document {document_id} indexed: {result['total_chunks']} chunks "
+            f"across {result['agents_indexed']} agents"
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to index document {document_id}: {e}")
 
 
 def get_file_extension(filename: str) -> str:
@@ -85,6 +129,7 @@ async def save_upload_file(
 
 @router.post("/upload", response_model=DocumentUploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
+    background_tasks: BackgroundTasks,
     project_id: UUID = Form(...),
     document_type: Optional[str] = Form("other"),
     file: UploadFile = File(...),
@@ -101,7 +146,8 @@ async def upload_document(
     4. Extracts text (PDF/images)
     5. Creates database record
     6. Logs audit event
-    7. Returns document with extraction status
+    7. Indexes document for RAG (background)
+    8. Returns document with extraction status
     """
     tenant_id = UUID(current_user.tenant_id)
     user_id = UUID(current_user.user_id)
@@ -204,10 +250,21 @@ async def upload_document(
         extraction_status = extraction_result["method"]
         pages_extracted = extraction_result["page_count"]
 
+        # Schedule background RAG indexing (only if extraction succeeded)
+        background_tasks.add_task(
+            index_document_background,
+            document_id=document.id,
+            tenant_id=tenant_id,
+            project_id=project_id,
+            extracted_text=extraction_result["text"],
+            page_count=extraction_result["page_count"],
+            filename=file.filename,
+            document_type=document_type,
+        )
+
     except Exception as e:
         # Don't fail upload if text extraction fails
-        import logging
-        logging.error(f"Text extraction failed: {e}")
+        logger.error(f"Text extraction failed: {e}")
         extraction_status = "failed"
         document.status = DocumentStatus.UPLOADED
         await db.commit()

@@ -1,325 +1,345 @@
 """
-RAG (Retrieval Augmented Generation) service using ChromaDB.
-Handles document indexing, embedding, and context retrieval for AI agents.
+RAG (Retrieval Augmented Generation) service.
+
+Orchestrates document indexing and retrieval for specialist AI agents.
+Integrates chunking, embeddings, and vector search.
 """
 
 from typing import List, Dict, Any, Optional
 from uuid import UUID
-import chromadb
-from chromadb.config import Settings
-from chromadb.utils import embedding_functions
-import openai
+import logging
 
-from ..core.config import settings
+from .chromadb_service import chromadb_service, ChromaDBService
+from .chunking_service import chunking_service, ChunkingService
+
+logger = logging.getLogger(__name__)
 
 
 class RAGService:
     """
-    Service for document embedding and retrieval using ChromaDB.
-    Each tenant has their own isolated collection.
+    RAG service for document indexing and retrieval.
+
+    Workflow:
+    1. Document Upload → Index
+       - Extract text
+       - Chunk document
+       - Generate embeddings (via ChromaDB + OpenAI)
+       - Store in collections for relevant agents
+
+    2. Agent Query → Retrieve
+       - Agent specifies query and domain
+       - Retrieve relevant chunks from agent's collection
+       - Return context for LLM analysis
     """
 
-    def __init__(self):
-        """Initialize ChromaDB client and OpenAI embeddings."""
-        # Initialize ChromaDB client
-        self.client = chromadb.HttpClient(
-            host=settings.CHROMA_HOST,
-            port=settings.CHROMA_PORT,
-        )
-
-        # Use OpenAI embeddings (text-embedding-3-small is fast and cost-effective)
-        self.embedding_function = embedding_functions.OpenAIEmbeddingFunction(
-            api_key=settings.OPENAI_API_KEY,
-            model_name="text-embedding-3-small",
-        )
-
-    def get_or_create_collection(self, tenant_id: str) -> chromadb.Collection:
-        """
-        Get or create a collection for a tenant.
-        Each tenant has isolated data in their own collection.
-        """
-        collection_name = f"tenant_{tenant_id.replace('-', '_')}"
-
-        try:
-            collection = self.client.get_collection(
-                name=collection_name,
-                embedding_function=self.embedding_function,
-            )
-        except Exception:
-            collection = self.client.create_collection(
-                name=collection_name,
-                embedding_function=self.embedding_function,
-                metadata={"tenant_id": tenant_id},
-            )
-
-        return collection
-
-    def index_document(
+    def __init__(
         self,
-        tenant_id: str,
-        document_id: str,
-        chunks: List[Dict[str, Any]],
-        document_metadata: Dict[str, Any],
+        chroma_service: ChromaDBService = chromadb_service,
+        chunking_service_instance: ChunkingService = chunking_service,
+    ):
+        """Initialize RAG service with dependencies."""
+        self.chroma = chroma_service
+        self.chunker = chunking_service_instance
+
+    async def initialize(self):
+        """Initialize RAG service (connect to ChromaDB)."""
+        await self.chroma.connect()
+        logger.info("RAG service initialized")
+
+    async def shutdown(self):
+        """Shutdown RAG service (disconnect from ChromaDB)."""
+        await self.chroma.disconnect()
+        logger.info("RAG service shutdown")
+
+    async def index_document(
+        self,
+        document_id: UUID,
+        tenant_id: UUID,
+        project_id: UUID,
+        text: str,
+        page_count: Optional[int] = None,
+        document_metadata: Optional[Dict[str, Any]] = None,
+        agent_names: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
-        Index document chunks into ChromaDB.
+        Index a document for RAG retrieval.
 
         Args:
-            tenant_id: Tenant ID for collection isolation
             document_id: Document UUID
-            chunks: List of text chunks with metadata
-            document_metadata: Document-level metadata (filename, type, etc.)
+            tenant_id: Tenant UUID
+            project_id: Project UUID
+            text: Extracted document text
+            page_count: Number of pages (for page context)
+            document_metadata: Document metadata (filename, type, etc.)
+            agent_names: List of specialist agents to index for
+                        If None, indexes for all agents
 
         Returns:
-            Indexing result with stats
+            Dictionary with indexing statistics
         """
-        collection = self.get_or_create_collection(tenant_id)
-
-        # Prepare data for ChromaDB
-        ids = []
-        texts = []
-        metadatas = []
-
-        for chunk in chunks:
-            chunk_id = f"{document_id}_chunk_{chunk['chunk_index']}"
-            ids.append(chunk_id)
-            texts.append(chunk["text"])
-
-            # Combine document metadata with chunk metadata
-            chunk_metadata = {
-                "document_id": document_id,
-                "chunk_index": chunk["chunk_index"],
-                "start_char": chunk["start_char"],
-                "end_char": chunk["end_char"],
-                **document_metadata,
+        if not text or len(text.strip()) == 0:
+            logger.warning(f"Empty text for document {document_id}, skipping indexing")
+            return {
+                "document_id": str(document_id),
+                "status": "skipped",
+                "reason": "empty_text",
             }
-            metadatas.append(chunk_metadata)
 
-        # Add to collection
-        collection.add(
-            ids=ids,
-            documents=texts,
-            metadatas=metadatas,
-        )
-
-        return {
-            "collection_id": collection.name,
-            "chunk_count": len(chunks),
-            "document_id": document_id,
+        # Prepare metadata
+        metadata = {
+            "document_id": str(document_id),
+            "tenant_id": str(tenant_id),
+            "project_id": str(project_id),
+            **(document_metadata or {}),
         }
 
-    def search(
-        self,
-        tenant_id: str,
-        query: str,
-        n_results: int = 5,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
-        """
-        Search for relevant document chunks.
-
-        Args:
-            tenant_id: Tenant ID for collection isolation
-            query: Search query
-            n_results: Number of results to return
-            filters: Optional metadata filters (e.g., {"document_id": "uuid"})
-
-        Returns:
-            List of relevant chunks with metadata and distances
-        """
-        collection = self.get_or_create_collection(tenant_id)
-
-        # Build where clause for filtering
-        where_clause = filters if filters else None
-
-        # Search
-        results = collection.query(
-            query_texts=[query],
-            n_results=n_results,
-            where=where_clause,
-        )
-
-        # Format results
-        formatted_results = []
-        if results["ids"] and results["ids"][0]:
-            for i, chunk_id in enumerate(results["ids"][0]):
-                formatted_results.append({
-                    "chunk_id": chunk_id,
-                    "text": results["documents"][0][i],
-                    "metadata": results["metadatas"][0][i] if results["metadatas"] else {},
-                    "distance": results["distances"][0][i] if results["distances"] else None,
-                })
-
-        return formatted_results
-
-    def delete_document(self, tenant_id: str, document_id: str) -> None:
-        """
-        Delete all chunks for a document from the collection.
-
-        Args:
-            tenant_id: Tenant ID
-            document_id: Document UUID to delete
-        """
-        collection = self.get_or_create_collection(tenant_id)
-
-        # Delete all chunks for this document
-        try:
-            collection.delete(
-                where={"document_id": document_id}
+        # Chunk document
+        if page_count and page_count > 1:
+            chunks = self.chunker.chunk_with_page_context(
+                text=text,
+                page_count=page_count,
+                metadata=metadata,
             )
-        except Exception as e:
-            print(f"Error deleting document chunks: {str(e)}")
+        else:
+            chunks = self.chunker.chunk_document(
+                text=text,
+                metadata=metadata,
+            )
 
-    def get_collection_stats(self, tenant_id: str) -> Dict[str, Any]:
-        """
-        Get statistics for a tenant's collection.
-
-        Returns:
-            {
-                "total_chunks": int,
-                "total_documents": int,
-                "collection_name": str
+        if not chunks:
+            logger.warning(f"No chunks created for document {document_id}")
+            return {
+                "document_id": str(document_id),
+                "status": "failed",
+                "reason": "no_chunks_created",
             }
-        """
-        collection = self.get_or_create_collection(tenant_id)
 
-        # Get all items to calculate stats
-        try:
-            count = collection.count()
+        # Determine which agents to index for
+        if agent_names is None:
+            # Index for all specialist agents + general
+            agent_names = ChromaDBService.SPECIALIST_AGENTS + ["general"]
+        else:
+            # Validate agent names
+            valid_agents = ChromaDBService.SPECIALIST_AGENTS + ["general"]
+            agent_names = [a for a in agent_names if a in valid_agents]
 
-            # Get unique document IDs
-            results = collection.get()
-            unique_docs = set()
-            if results["metadatas"]:
-                unique_docs = {
-                    meta.get("document_id")
-                    for meta in results["metadatas"]
-                    if meta.get("document_id")
+        # Index chunks for each agent
+        indexing_results = {}
+
+        for agent_name in agent_names:
+            try:
+                chunks_added = await self.chroma.add_document_chunks(
+                    agent_name=agent_name,
+                    chunks=chunks,
+                    tenant_id=tenant_id,
+                    document_id=document_id,
+                    project_id=project_id,
+                )
+
+                indexing_results[agent_name] = {
+                    "status": "success",
+                    "chunks_added": chunks_added,
                 }
 
-            return {
-                "total_chunks": count,
-                "total_documents": len(unique_docs),
-                "collection_name": collection.name,
-            }
+            except Exception as e:
+                logger.error(f"Failed to index for {agent_name}: {e}")
+                indexing_results[agent_name] = {
+                    "status": "failed",
+                    "error": str(e),
+                }
+
+        # Calculate overall statistics
+        total_chunks = len(chunks)
+        successful_agents = sum(1 for r in indexing_results.values() if r["status"] == "success")
+
+        return {
+            "document_id": str(document_id),
+            "status": "completed",
+            "total_chunks": total_chunks,
+            "agents_indexed": successful_agents,
+            "agent_results": indexing_results,
+        }
+
+    async def query_for_context(
+        self,
+        query: str,
+        agent_name: str,
+        tenant_id: UUID,
+        n_results: int = 5,
+        document_id: Optional[UUID] = None,
+        project_id: Optional[UUID] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Query for relevant document chunks (RAG context).
+
+        Args:
+            query: Search query (natural language)
+            agent_name: Specialist agent name (e.g., "fire_safety")
+            tenant_id: Tenant UUID (for isolation)
+            n_results: Number of chunks to retrieve
+            document_id: Optional filter by document
+            project_id: Optional filter by project
+
+        Returns:
+            List of relevant chunks with metadata
+        """
+        try:
+            results = await self.chroma.query_agent_collection(
+                agent_name=agent_name,
+                query_text=query,
+                tenant_id=tenant_id,
+                n_results=n_results,
+                document_id=document_id,
+                project_id=project_id,
+            )
+
+            logger.info(f"Retrieved {len(results)} chunks for {agent_name} query")
+            return results
+
         except Exception as e:
+            logger.error(f"Failed to query {agent_name}: {e}")
+            return []
+
+    async def delete_document_from_index(
+        self,
+        document_id: UUID,
+        tenant_id: UUID,
+    ) -> Dict[str, Any]:
+        """
+        Delete all chunks for a document from all collections.
+
+        Args:
+            document_id: Document UUID
+            tenant_id: Tenant UUID
+
+        Returns:
+            Deletion statistics
+        """
+        try:
+            chunks_deleted = await self.chroma.delete_document_chunks(
+                tenant_id=tenant_id,
+                document_id=document_id,
+            )
+
+            logger.info(f"Deleted {chunks_deleted} chunks for document {document_id}")
+
             return {
-                "total_chunks": 0,
-                "total_documents": 0,
-                "collection_name": collection.name,
+                "document_id": str(document_id),
+                "status": "success",
+                "chunks_deleted": chunks_deleted,
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to delete document {document_id}: {e}")
+            return {
+                "document_id": str(document_id),
+                "status": "failed",
                 "error": str(e),
             }
 
-
-class ChatService:
-    """
-    Service for RAG-powered chat using retrieved context.
-    """
-
-    def __init__(self, rag_service: RAGService):
-        """Initialize with RAG service."""
-        self.rag_service = rag_service
-
-    async def generate_response(
-        self,
-        tenant_id: str,
-        user_query: str,
-        document_id: Optional[str] = None,
-        conversation_history: Optional[List[Dict[str, str]]] = None,
-    ) -> Dict[str, Any]:
+    async def get_agent_stats(self, agent_name: str) -> Dict[str, Any]:
         """
-        Generate AI response using RAG context.
+        Get statistics for a specialist agent's collection.
 
         Args:
-            tenant_id: Tenant ID
-            user_query: User's question
-            document_id: Optional document ID to limit context to specific document
-            conversation_history: Previous messages for context
+            agent_name: Specialist agent name
 
         Returns:
-            {
-                "response": "AI generated response",
-                "sources": ["chunk1", "chunk2"],
-                "metadata": {...}
-            }
+            Collection statistics
         """
-
-        # Search for relevant context
-        filters = {"document_id": document_id} if document_id else None
-        relevant_chunks = self.rag_service.search(
-            tenant_id=tenant_id,
-            query=user_query,
-            n_results=5,
-            filters=filters,
-        )
-
-        # Build context from retrieved chunks
-        context_parts = []
-        sources = []
-
-        for i, chunk in enumerate(relevant_chunks):
-            context_parts.append(f"[Context {i+1}]\n{chunk['text']}\n")
-            sources.append({
-                "chunk_id": chunk["chunk_id"],
-                "document_id": chunk["metadata"].get("document_id"),
-                "filename": chunk["metadata"].get("filename"),
-                "relevance_score": 1 - (chunk["distance"] or 0),  # Convert distance to similarity
-            })
-
-        context = "\n".join(context_parts)
-
-        # Build conversation history
-        messages = []
-
-        # System message
-        system_message = f"""You are an AI assistant for BuiltEnvironment.ai, helping analyze building documents and check compliance with UK Building Regulations.
-
-Use the following context from the uploaded documents to answer the user's question:
-
-{context}
-
-Guidelines:
-- Cite specific document sections when making claims
-- If the context doesn't contain the answer, say so clearly
-- For compliance questions, reference specific regulations (Part A-S)
-- Be precise and technical when discussing building standards
-- If asked about fire safety, reference Part B specifically"""
-
-        messages.append({"role": "system", "content": system_message})
-
-        # Add conversation history if provided
-        if conversation_history:
-            messages.extend(conversation_history)
-
-        # Add current user query
-        messages.append({"role": "user", "content": user_query})
-
-        # Generate response using Anthropic Claude
         try:
-            from anthropic import AsyncAnthropic
-            client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-
-            response = await client.messages.create(
-                model="claude-3-5-sonnet-20241022",
-                max_tokens=2000,
-                messages=messages,
-            )
-
-            ai_response = response.content[0].text
-
-            return {
-                "response": ai_response,
-                "sources": sources,
-                "metadata": {
-                    "model": "claude-3-5-sonnet-20241022",
-                    "chunks_used": len(relevant_chunks),
-                    "tokens": response.usage.input_tokens + response.usage.output_tokens,
-                },
-            }
+            stats = await self.chroma.get_collection_stats(agent_name)
+            return stats
 
         except Exception as e:
+            logger.error(f"Failed to get stats for {agent_name}: {e}")
             return {
-                "response": f"Error generating response: {str(e)}",
-                "sources": sources,
-                "metadata": {"error": str(e)},
+                "agent_name": agent_name,
+                "status": "error",
+                "error": str(e),
             }
+
+    async def reindex_document(
+        self,
+        document_id: UUID,
+        tenant_id: UUID,
+        project_id: UUID,
+        text: str,
+        page_count: Optional[int] = None,
+        document_metadata: Optional[Dict[str, Any]] = None,
+        agent_names: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Reindex a document (delete old chunks, index new ones).
+
+        Useful when document content changes or agents need updating.
+
+        Args:
+            Same as index_document
+
+        Returns:
+            Reindexing statistics
+        """
+        # Delete existing chunks
+        delete_result = await self.delete_document_from_index(
+            document_id=document_id,
+            tenant_id=tenant_id,
+        )
+
+        # Index document
+        index_result = await self.index_document(
+            document_id=document_id,
+            tenant_id=tenant_id,
+            project_id=project_id,
+            text=text,
+            page_count=page_count,
+            document_metadata=document_metadata,
+            agent_names=agent_names,
+        )
+
+        return {
+            "document_id": str(document_id),
+            "status": "completed",
+            "deleted": delete_result,
+            "indexed": index_result,
+        }
+
+    def format_context_for_llm(
+        self,
+        chunks: List[Dict[str, Any]],
+        max_chunks: int = 5,
+    ) -> str:
+        """
+        Format retrieved chunks into context string for LLM.
+
+        Args:
+            chunks: List of chunk dictionaries from query_for_context
+            max_chunks: Maximum chunks to include
+
+        Returns:
+            Formatted context string
+        """
+        if not chunks:
+            return "No relevant context found."
+
+        context_parts = ["# Relevant Document Context\n"]
+
+        for i, chunk in enumerate(chunks[:max_chunks]):
+            context_parts.append(f"\n## Chunk {i + 1}")
+
+            # Add metadata if available
+            metadata = chunk.get("metadata", {})
+            if "page_number" in metadata:
+                context_parts.append(f"(Page {metadata['page_number']})")
+
+            # Add chunk text
+            context_parts.append(f"\n{chunk['text']}\n")
+
+            # Add separator
+            context_parts.append("---")
+
+        return "\n".join(context_parts)
+
+
+# Global RAG service instance
+rag_service = RAGService()
