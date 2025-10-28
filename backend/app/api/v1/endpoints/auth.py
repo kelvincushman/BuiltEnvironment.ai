@@ -16,6 +16,9 @@ from ....schemas.auth import (
     RegisterRequest,
     LoginRequest,
     RefreshTokenRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    MessageResponse,
     Token,
 )
 from ....core.security import (
@@ -25,7 +28,12 @@ from ....core.security import (
     create_refresh_token,
     decode_token,
 )
+from ....core.security_tokens import (
+    create_password_reset_token,
+    verify_password_reset_token,
+)
 from ....services.audit_logger import audit_logger
+from ....services.email_service import email_service
 from ....models.audit import EventType
 
 router = APIRouter()
@@ -244,3 +252,92 @@ async def refresh_token(request: RefreshTokenRequest):
         refresh_token=new_refresh_token,
         token_type="bearer",
     )
+
+
+@router.post("/forgot-password", response_model=MessageResponse)
+async def forgot_password(
+    request: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Send password reset email to user.
+
+    Always returns success (even if email doesn't exist) to prevent email enumeration.
+    """
+
+    # Find user by email
+    result = await db.execute(select(User).where(User.email == request.email))
+    user = result.scalar_one_or_none()
+
+    # Always return success to prevent email enumeration
+    # Only send email if user exists
+    if user:
+        # Generate password reset token
+        reset_token = create_password_reset_token(user.email)
+
+        # Send password reset email
+        await email_service.send_password_reset_email(
+            to_email=user.email,
+            reset_token=reset_token,
+            user_name=user.first_name,
+        )
+
+        # Log audit event
+        await audit_logger.log_user_action(
+            tenant_id=user.tenant_id,
+            user_id=user.id,
+            action="forgot_password",
+            event_type=EventType.USER_AUTH,
+            status="success",
+            description=f"Password reset requested for '{user.email}'",
+        )
+
+    # Always return success message
+    return MessageResponse(
+        message="If your email is registered, you will receive password reset instructions."
+    )
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+async def reset_password(
+    request: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Reset password using reset token from email.
+    """
+
+    # Verify reset token
+    email = verify_password_reset_token(request.token)
+
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token",
+        )
+
+    # Find user by email
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token",
+        )
+
+    # Update password
+    user.hashed_password = get_password_hash(request.new_password)
+    await db.commit()
+
+    # Log audit event
+    await audit_logger.log_user_action(
+        tenant_id=user.tenant_id,
+        user_id=user.id,
+        action="reset_password",
+        event_type=EventType.USER_AUTH,
+        status="success",
+        description=f"Password reset completed for '{user.email}'",
+    )
+
+    return MessageResponse(message="Password has been reset successfully")
