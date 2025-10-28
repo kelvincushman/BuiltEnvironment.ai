@@ -8,6 +8,7 @@ from .subscription import Subscription
 from .project import Project
 from .document import Document
 from .audit import AuditEvent
+from .chat import Conversation, Message
 
 __all__ = [
     "Tenant",
@@ -16,4 +17,6 @@ __all__ = [
     "Project",
     "Document",
     "AuditEvent",
+    "Conversation",
+    "Message",
 ]
