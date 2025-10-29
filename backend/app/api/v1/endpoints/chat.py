@@ -18,6 +18,7 @@ import logging
 from ....db.base import get_db
 from ....models.chat import Conversation, Message, ConversationStatus, MessageRole
 from ....models.project import Project
+from ....models.user import User
 from ....schemas.chat import (
     ConversationCreate,
     ConversationUpdate,
@@ -32,7 +33,9 @@ from ....schemas.chat import (
     SpecialistAgentInfo,
 )
 from ....core.security import CurrentUser
+from ....core.deps import get_current_user
 from ....services.chat_service import chat_service
+from ....services.usage_tracker import usage_tracker
 from ....services.audit_logger import audit_logger
 from ....models.audit import EventType
 
@@ -287,22 +290,30 @@ async def delete_conversation(
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
     chat_request: ChatRequest,
-    current_user: CurrentUser = Depends(),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Send a message and get AI response.
 
     This endpoint:
-    1. Creates or retrieves conversation
-    2. Saves user message
-    3. Retrieves RAG context
-    4. Generates AI response with specialist agent
-    5. Saves AI response
-    6. Returns response with context summary
+    1. Checks AI check limit (subscription enforcement) ✅
+    2. Creates or retrieves conversation
+    3. Saves user message
+    4. Retrieves RAG context
+    5. Generates AI response with specialist agent
+    6. Saves AI response
+    7. Increments AI check counter ✅
+    8. Returns response with context summary
+
+    Usage limits enforced:
+    - AI checks per month (based on subscription tier)
     """
-    tenant_id = UUID(current_user.tenant_id)
-    user_id = UUID(current_user.user_id)
+    tenant_id = current_user.tenant_id
+    user_id = current_user.id
+
+    # Check AI check limit before generating response
+    await usage_tracker.check_ai_check_limit(tenant_id, db)
 
     # Get or create conversation
     if chat_request.conversation_id:
@@ -399,6 +410,9 @@ async def chat(
 
     await db.commit()
     await db.refresh(ai_message)
+
+    # Increment AI check counter for usage tracking
+    await usage_tracker.increment_ai_check_count(tenant_id, db)
 
     # Log audit event
     await audit_logger.log_user_action(

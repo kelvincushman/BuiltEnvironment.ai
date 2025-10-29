@@ -17,8 +17,10 @@ import logging
 from ....db.base import get_db
 from ....models.document import Document, DocumentStatus, DocumentType
 from ....models.project import Project
+from ....models.user import User
 from ....schemas.document import Document as DocumentSchema, DocumentUpdate
 from ....core.security import CurrentUser
+from ....core.deps import get_current_user
 from ....core.config import settings
 from ....services.storage_service import storage_service
 from ....services.text_extraction_service import text_extraction_service
@@ -133,24 +135,28 @@ async def upload_document(
     project_id: UUID = Form(...),
     document_type: Optional[str] = Form("other"),
     file: UploadFile = File(...),
-    current_user: CurrentUser = Depends(),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Upload a document to a project.
 
     This endpoint:
-    1. Checks usage limits (documents and storage)
+    1. Checks usage limits (documents and storage) ✅
     2. Validates the file type
     3. Saves file to storage
-    4. Extracts text (PDF/images)
+    4. Extracts text (PDF/images with multi-OCR)
     5. Creates database record
     6. Logs audit event
     7. Indexes document for RAG (background)
     8. Returns document with extraction status
+
+    Usage limits enforced:
+    - Documents per month limit (based on subscription tier)
+    - Storage limit in GB (based on subscription tier)
     """
-    tenant_id = UUID(current_user.tenant_id)
-    user_id = UUID(current_user.user_id)
+    tenant_id = current_user.tenant_id
+    user_id = current_user.id
 
     # Validate file extension
     if not storage_service.is_allowed_extension(file.filename):
