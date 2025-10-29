@@ -4,8 +4,10 @@ API v1 router that combines all endpoint routers.
 
 from fastapi import APIRouter
 from .endpoints.auth import router as auth_router
+from .endpoints.users import router as users_router
 from .endpoints.projects import router as projects_router
 from .endpoints.documents import router as documents_router
+from .endpoints.findings import router as findings_router
 from .endpoints.chat import router as chat_router
 from .endpoints.ai import router as ai_router
 from .endpoints.subscriptions import router as subscriptions_router
@@ -16,9 +18,11 @@ api_router = APIRouter()
 
 # Include all endpoint routers
 api_router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+api_router.include_router(users_router, prefix="/users", tags=["Users"])
 api_router.include_router(subscriptions_router, prefix="/subscriptions", tags=["Subscriptions"])
 api_router.include_router(projects_router, prefix="/projects", tags=["Projects"])
 api_router.include_router(documents_router, prefix="/documents", tags=["Documents"])
+api_router.include_router(findings_router, prefix="/findings", tags=["Findings"])
 api_router.include_router(chat_router, prefix="/chat", tags=["Chat"])
 api_router.include_router(ai_router, prefix="/ai", tags=["AI Agents"])
 api_router.include_router(audit_router, prefix="/audit", tags=["Audit"])

@@ -34,6 +34,13 @@ class UserUpdate(BaseModel):
     job_title: Optional[str] = None
 
 
+class ChangePasswordRequest(BaseModel):
+    """Schema for changing password."""
+
+    current_password: str = Field(..., min_length=8)
+    new_password: str = Field(..., min_length=8)
+
+
 class User(UserBase):
     """User response schema."""
 

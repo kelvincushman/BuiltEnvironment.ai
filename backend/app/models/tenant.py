@@ -54,6 +54,7 @@ class Tenant(Base):
     )
     projects = relationship("Project", back_populates="tenant", cascade="all, delete-orphan")
     conversations = relationship("Conversation", back_populates="tenant", cascade="all, delete-orphan")
+    findings = relationship("Finding", back_populates="tenant", cascade="all, delete-orphan")
     audit_events = relationship(
         "AuditEvent", back_populates="tenant", cascade="all, delete-orphan"
     )

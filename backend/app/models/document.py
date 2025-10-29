@@ -124,6 +124,7 @@ class Document(Base):
     # Relationships
     tenant = relationship("Tenant")
     project = relationship("Project", back_populates="documents")
+    findings = relationship("Finding", back_populates="document", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Document {self.original_filename} ({self.status.value})>"
