@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { RichTextEditor } from '@/components/editor'
+import { RichTextEditor, Comments, type Comment } from '@/components/editor'
 import { Card, Button, Badge } from '@/components/ui'
 import {
   ArrowLeft,
@@ -11,7 +11,18 @@ import {
   FileText,
   CheckCircle,
   AlertTriangle,
+  FileDown,
+  Copy,
+  FileType,
 } from 'lucide-react'
+import { toast } from 'sonner'
+import {
+  exportToPDF,
+  exportToMarkdown,
+  exportToHTML,
+  exportToDOCX,
+  copyToClipboard,
+} from '@/utils/exportUtils'
 
 // Mock document data - will be replaced with API
 const mockDocument = {
@@ -95,9 +106,45 @@ export function DocumentEditor() {
   const [document] = useState(mockDocument)
   const [content, setContent] = useState(document.content)
   const [isSaving, setIsSaving] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const [comments, setComments] = useState<Comment[]>([
+    {
+      id: '1',
+      author: 'Sarah Johnson',
+      authorRole: 'Fire Safety Engineer',
+      content: 'The stairwell width issue needs immediate attention before proceeding to construction phase.',
+      createdAt: '2025-02-15 15:45',
+      resolved: false,
+      highlightedText: 'The main escape stairwell width measures 950mm',
+    },
+    {
+      id: '2',
+      author: 'Mike Brown',
+      authorRole: 'Project Manager',
+      content: 'Can we get clarification on the fire door hardware requirements from the supplier?',
+      createdAt: '2025-02-15 16:20',
+      resolved: false,
+      highlightedText: 'fire door hardware requirements',
+    },
+  ])
+
+  const exportMenuRef = useRef<HTMLDivElement>(null)
 
   const StatusIcon = statusInfo[document.status].icon
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+        setShowExportMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -105,16 +152,91 @@ export function DocumentEditor() {
     await new Promise((resolve) => setTimeout(resolve, 1000))
     setLastSaved(new Date())
     setIsSaving(false)
+    toast.success('Document saved successfully')
   }
 
-  const handleExport = () => {
-    // TODO: Implement export functionality
-    alert('Export functionality will be implemented in the next phase')
+  const handleExport = async (format: 'pdf' | 'docx' | 'markdown' | 'html' | 'copy') => {
+    setIsExporting(true)
+    setShowExportMenu(false)
+
+    try {
+      const fileName = document.name.replace(/\.[^/.]+$/, '') // Remove extension if present
+
+      switch (format) {
+        case 'pdf':
+          await exportToPDF(content, fileName)
+          toast.success('Document exported as PDF')
+          break
+        case 'docx':
+          exportToDOCX(content, fileName)
+          toast.success('Document exported as DOCX')
+          break
+        case 'markdown':
+          exportToMarkdown(content, fileName)
+          toast.success('Document exported as Markdown')
+          break
+        case 'html':
+          exportToHTML(content, fileName)
+          toast.success('Document exported as HTML')
+          break
+        case 'copy':
+          // Copy plain text version
+          const tempDiv = document.createElement('div')
+          tempDiv.innerHTML = content
+          await copyToClipboard(tempDiv.textContent || '')
+          toast.success('Content copied to clipboard')
+          break
+      }
+    } catch (error) {
+      toast.error('Failed to export document')
+      console.error('Export error:', error)
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const handleShare = () => {
-    // TODO: Implement share functionality
-    alert('Share functionality will be implemented in the next phase')
+    toast.info('Share functionality coming soon')
+  }
+
+  // Comment handlers
+  const handleAddComment = (content: string, highlightedText?: string) => {
+    const newComment: Comment = {
+      id: Date.now().toString(),
+      author: 'Current User', // In real app, get from AuthContext
+      authorRole: 'Reviewer',
+      content,
+      createdAt: new Date().toLocaleString(),
+      resolved: false,
+      highlightedText,
+    }
+    setComments([...comments, newComment])
+    toast.success('Comment added')
+  }
+
+  const handleEditComment = (id: string, newContent: string) => {
+    setComments(
+      comments.map((comment) =>
+        comment.id === id
+          ? { ...comment, content: newContent, updatedAt: new Date().toLocaleString() }
+          : comment
+      )
+    )
+    toast.success('Comment updated')
+  }
+
+  const handleDeleteComment = (id: string) => {
+    setComments(comments.filter((comment) => comment.id !== id))
+    toast.success('Comment deleted')
+  }
+
+  const handleResolveComment = (id: string) => {
+    setComments(
+      comments.map((comment) =>
+        comment.id === id ? { ...comment, resolved: true } : comment
+      )
+    )
+    toast.success('Comment resolved')
   }
 
   return (
@@ -168,13 +290,61 @@ export function DocumentEditor() {
             >
               Share
             </Button>
-            <Button
-              variant="outline"
-              leftIcon={<Download className="h-4 w-4" />}
-              onClick={handleExport}
-            >
-              Export
-            </Button>
+
+            {/* Export Dropdown */}
+            <div className="relative" ref={exportMenuRef}>
+              <Button
+                variant="outline"
+                leftIcon={<Download className="h-4 w-4" />}
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={isExporting}
+                isLoading={isExporting}
+              >
+                Export
+              </Button>
+
+              {showExportMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                  <button
+                    onClick={() => handleExport('pdf')}
+                    className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <FileDown className="h-4 w-4 mr-3 text-danger-600 dark:text-danger-400" />
+                    Export as PDF
+                  </button>
+                  <button
+                    onClick={() => handleExport('docx')}
+                    className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <FileType className="h-4 w-4 mr-3 text-primary-600 dark:text-primary-400" />
+                    Export as DOCX
+                  </button>
+                  <button
+                    onClick={() => handleExport('markdown')}
+                    className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <FileText className="h-4 w-4 mr-3 text-gray-600 dark:text-gray-400" />
+                    Export as Markdown
+                  </button>
+                  <button
+                    onClick={() => handleExport('html')}
+                    className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <FileText className="h-4 w-4 mr-3 text-accent-600 dark:text-accent-400" />
+                    Export as HTML
+                  </button>
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                  <button
+                    onClick={() => handleExport('copy')}
+                    className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <Copy className="h-4 w-4 mr-3 text-gray-600 dark:text-gray-400" />
+                    Copy to Clipboard
+                  </button>
+                </div>
+              )}
+            </div>
+
             <Button
               variant="primary"
               leftIcon={<Save className="h-4 w-4" />}
@@ -208,46 +378,68 @@ export function DocumentEditor() {
         </Card.Content>
       </Card>
 
-      {/* Editor */}
-      <Card>
-        <Card.Content className="p-0">
-          <RichTextEditor
-            content={content}
-            onChange={setContent}
-            placeholder="Start editing the document..."
-            minHeight="600px"
-          />
-        </Card.Content>
-      </Card>
+      {/* Editor and Comments - Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Editor (2/3 width on large screens) */}
+        <div className="lg:col-span-2 space-y-4">
+          <Card>
+            <Card.Content className="p-0">
+              <RichTextEditor
+                content={content}
+                onChange={setContent}
+                placeholder="Start editing the document..."
+                minHeight="600px"
+              />
+            </Card.Content>
+          </Card>
 
-      {/* Quick Tips */}
-      <Card>
-        <Card.Header>
-          <Card.Title>Editor Tips</Card.Title>
-        </Card.Header>
-        <Card.Content>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-white mb-1">Highlighting</p>
-              <p className="text-gray-600 dark:text-gray-400">
-                Use the highlight tool to mark areas that need attention or review
-              </p>
-            </div>
-            <div>
-              <p className="font-medium text-gray-900 dark:text-white mb-1">Text Formatting</p>
-              <p className="text-gray-600 dark:text-gray-400">
-                Bold, italic, underline, and color options available in the toolbar
-              </p>
-            </div>
-            <div>
-              <p className="font-medium text-gray-900 dark:text-white mb-1">Keyboard Shortcuts</p>
-              <p className="text-gray-600 dark:text-gray-400">
-                Ctrl+B (Bold), Ctrl+I (Italic), Ctrl+U (Underline), Ctrl+Z (Undo)
-              </p>
-            </div>
-          </div>
-        </Card.Content>
-      </Card>
+          {/* Quick Tips */}
+          <Card>
+            <Card.Header>
+              <Card.Title>Editor Tips</Card.Title>
+            </Card.Header>
+            <Card.Content>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white mb-1">Highlighting</p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Use the highlight tool to mark areas that need attention or review
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white mb-1">Commenting</p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Add comments to specific sections for collaborative review
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white mb-1">Text Formatting</p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Bold, italic, underline, and color options available in the toolbar
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white mb-1">Keyboard Shortcuts</p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Ctrl+B (Bold), Ctrl+I (Italic), Ctrl+U (Underline), Ctrl+Z (Undo)
+                  </p>
+                </div>
+              </div>
+            </Card.Content>
+          </Card>
+        </div>
+
+        {/* Comments Panel (1/3 width on large screens) */}
+        <div className="lg:col-span-1">
+          <Comments
+            comments={comments}
+            onAddComment={handleAddComment}
+            onEditComment={handleEditComment}
+            onDeleteComment={handleDeleteComment}
+            onResolveComment={handleResolveComment}
+          />
+        </div>
+      </div>
     </div>
   )
 }
