@@ -1,3 +1,7 @@
 export * from './RichTextEditor'
 export * from './EditorToolbar'
 export * from './Comments'
+export * from './CommentThreads'
+export * from './DocumentVersionHistory'
+export * from './CollaborativePresence'
+export * from './TrackChanges'

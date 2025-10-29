@@ -14,6 +14,7 @@ import {
   ProjectDetails,
   Documents,
   DocumentEditor,
+  DocumentEditorAdvanced,
   Findings,
   Chat,
 } from '@/pages'
@@ -78,6 +79,16 @@ function App() {
               <ProtectedRoute>
                 <MainLayout>
                   <DocumentEditor />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documents/:id/edit/advanced"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DocumentEditorAdvanced />
                 </MainLayout>
               </ProtectedRoute>
             }
