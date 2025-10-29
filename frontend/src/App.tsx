@@ -13,6 +13,7 @@ import {
   Projects,
   ProjectDetails,
   Documents,
+  DocumentEditor,
   Findings,
   Chat,
 } from '@/pages'
@@ -67,6 +68,16 @@ function App() {
               <ProtectedRoute>
                 <MainLayout>
                   <Documents />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documents/:id/edit"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DocumentEditor />
                 </MainLayout>
               </ProtectedRoute>
             }
