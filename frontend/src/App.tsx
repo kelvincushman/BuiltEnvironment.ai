@@ -4,7 +4,18 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ProtectedRoute } from '@/components/auth'
 import { MainLayout } from '@/components/layout'
-import { Login, Register, ForgotPassword, ResetPassword, Dashboard } from '@/pages'
+import {
+  Login,
+  Register,
+  ForgotPassword,
+  ResetPassword,
+  Dashboard,
+  Projects,
+  ProjectDetails,
+  Documents,
+  Findings,
+  Chat,
+} from '@/pages'
 
 function App() {
   return (
@@ -29,20 +40,23 @@ function App() {
             }
           />
 
-          {/* Placeholder routes for navigation items */}
+          {/* Feature pages */}
           <Route
             path="/projects"
             element={
               <ProtectedRoute>
                 <MainLayout>
-                  <div className="text-center py-12">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                      Projects
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Projects page will be built in Phase 4
-                    </p>
-                  </div>
+                  <Projects />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:id"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <ProjectDetails />
                 </MainLayout>
               </ProtectedRoute>
             }
@@ -52,14 +66,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <MainLayout>
-                  <div className="text-center py-12">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                      Documents
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Documents page will be built in Phase 4
-                    </p>
-                  </div>
+                  <Documents />
                 </MainLayout>
               </ProtectedRoute>
             }
@@ -69,14 +76,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <MainLayout>
-                  <div className="text-center py-12">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                      Chat Assistant
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Chat page will be built in Phase 4
-                    </p>
-                  </div>
+                  <Chat />
                 </MainLayout>
               </ProtectedRoute>
             }
@@ -86,14 +86,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <MainLayout>
-                  <div className="text-center py-12">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                      Findings
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Findings page will be built in Phase 4
-                    </p>
-                  </div>
+                  <Findings />
                 </MainLayout>
               </ProtectedRoute>
             }
