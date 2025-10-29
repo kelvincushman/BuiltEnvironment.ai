@@ -3,23 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ProtectedRoute } from '@/components/auth'
-import { Login, Register, ForgotPassword, ResetPassword } from '@/pages'
-
-// Placeholder Dashboard component (will be built in Phase 3)
-function Dashboard() {
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-          Dashboard
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Dashboard will be built in Phase 3
-        </p>
-      </div>
-    </div>
-  )
-}
+import { MainLayout } from '@/components/layout'
+import { Login, Register, ForgotPassword, ResetPassword, Dashboard } from '@/pages'
 
 function App() {
   return (
@@ -32,12 +17,118 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* Protected routes */}
+          {/* Protected routes with MainLayout */}
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <MainLayout>
+                  <Dashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Placeholder routes for navigation items */}
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <div className="text-center py-12">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      Projects
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Projects page will be built in Phase 4
+                    </p>
+                  </div>
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <div className="text-center py-12">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      Documents
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Documents page will be built in Phase 4
+                    </p>
+                  </div>
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <div className="text-center py-12">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      Chat Assistant
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Chat page will be built in Phase 4
+                    </p>
+                  </div>
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/findings"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <div className="text-center py-12">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      Findings
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Findings page will be built in Phase 4
+                    </p>
+                  </div>
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <div className="text-center py-12">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      Analytics
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Analytics page will be built in Phase 4
+                    </p>
+                  </div>
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <div className="text-center py-12">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      Settings
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Settings page will be built in Phase 4
+                    </p>
+                  </div>
+                </MainLayout>
               </ProtectedRoute>
             }
           />
