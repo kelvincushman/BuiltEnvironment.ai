@@ -22,7 +22,6 @@ import {
   File,
   FileSpreadsheet,
   FileImage,
-  FilePdf,
 } from 'lucide-react'
 
 interface Document {
@@ -97,7 +96,7 @@ const mockDocuments: Document[] = [
 ]
 
 const fileIcons = {
-  pdf: FilePdf,
+  pdf: FileText,
   xlsx: FileSpreadsheet,
   docx: FileText,
   dwg: FileText,

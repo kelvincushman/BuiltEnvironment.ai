@@ -9,40 +9,6 @@ export interface CardProps {
   onClick?: () => void
 }
 
-export function Card({
-  children,
-  className,
-  padding = 'md',
-  hover = false,
-  onClick,
-}: CardProps) {
-  const paddingStyles = {
-    none: '',
-    sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8',
-  }
-
-  const baseStyles = 'bg-white dark:bg-gray-800 rounded-lg shadow-soft border border-gray-200 dark:border-gray-700'
-  const hoverStyles = hover ? 'transition-all duration-200 hover:shadow-soft-lg hover:border-primary-300 dark:hover:border-primary-700 cursor-pointer' : ''
-  const clickableStyles = onClick ? 'cursor-pointer' : ''
-
-  return (
-    <div
-      className={clsx(
-        baseStyles,
-        paddingStyles[padding],
-        hoverStyles,
-        clickableStyles,
-        className
-      )}
-      onClick={onClick}
-    >
-      {children}
-    </div>
-  )
-}
-
 export interface CardHeaderProps {
   children: React.ReactNode
   className?: string
@@ -90,3 +56,44 @@ export function CardFooter({ children, className }: CardFooterProps) {
     </div>
   )
 }
+
+// Main Card component with compound components
+export function Card({
+  children,
+  className,
+  padding = 'md',
+  hover = false,
+  onClick,
+}: CardProps) {
+  const paddingStyles = {
+    none: '',
+    sm: 'p-4',
+    md: 'p-6',
+    lg: 'p-8',
+  }
+
+  const baseStyles = 'bg-white dark:bg-gray-800 rounded-lg shadow-soft border border-gray-200 dark:border-gray-700'
+  const hoverStyles = hover ? 'transition-all duration-200 hover:shadow-soft-lg hover:border-primary-300 dark:hover:border-primary-700 cursor-pointer' : ''
+  const clickableStyles = onClick ? 'cursor-pointer' : ''
+
+  return (
+    <div
+      className={clsx(
+        baseStyles,
+        paddingStyles[padding],
+        hoverStyles,
+        clickableStyles,
+        className
+      )}
+      onClick={onClick}
+    >
+      {children}
+    </div>
+  )
+}
+
+// Attach compound components to Card
+Card.Header = CardHeader
+Card.Title = CardTitle
+Card.Content = CardContent
+Card.Footer = CardFooter
